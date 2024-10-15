@@ -58,3 +58,16 @@ data BoundingBox = BoundingBox {
                   , width     :: Int
                   , height    :: Int 
                   }
+
+
+class CanMove a where
+  getPos :: a -> Point
+  setPos :: a -> Point -> a
+
+move :: CanMove a => a -> Vector -> a
+move x (Vector vecx vecy) = setPos x newPoint
+  where newPoint = Point (posx + vecx) (posy + vecy)
+        (Point posx posy) = getPos x
+
+class HasCollision a where
+  getBB :: a -> BoundingBox
