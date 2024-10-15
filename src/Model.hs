@@ -71,3 +71,6 @@ move x (Vector vecx vecy) = setPos x newPoint
 
 class HasCollision a where
   getBB :: a -> BoundingBox
+
+intersects :: HasCollision a => a -> a -> Bool
+intersects = undefined
