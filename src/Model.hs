@@ -55,8 +55,8 @@ type Playtime = Float
 
 data BoundingBox = BoundingBox { 
                     lowerLeft :: Point
-                  , width     :: Int
-                  , height    :: Int 
+                  , width     :: Float
+                  , height    :: Float 
                   }
 
 
@@ -73,4 +73,12 @@ class HasCollision a where
   getBB :: a -> BoundingBox
 
 intersects :: HasCollision a => a -> a -> Bool
-intersects = undefined
+intersects one two = any (`inBox` boxOne) (corners boxTwo) || any (`inBox` boxTwo) (corners boxOne)
+  where boxOne = getBB one
+        boxTwo = getBB two 
+
+inBox :: Point -> BoundingBox -> Bool
+inBox (Point px py) (BoundingBox (Point x y) w h) = and [px >= x, px <= x + w, py >= y, py <= y + h]
+
+corners :: BoundingBox -> [Point]
+corners (BoundingBox ll@(Point x y) w h) = [ll, Point (x+w) y, Point (x+h) (y+h), Point x (y+h)]
