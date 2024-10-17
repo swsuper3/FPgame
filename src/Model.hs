@@ -6,16 +6,21 @@ data InfoToShow = ShowNothing
                 | ShowANumber Int
                 | ShowAChar   Char
 
-nO_SECS_BETWEEN_CYCLES :: Float
-nO_SECS_BETWEEN_CYCLES = 5
+-- nO_SECS_BETWEEN_CYCLES :: Float
+-- nO_SECS_BETWEEN_CYCLES = 5
 
 data GameState = GameState {
-                   infoToShow  :: InfoToShow
-                 , elapsedTime :: Float
+                   elapsedTime :: Float,
+                   score :: Score,
+                   status :: PlayingStatus,
+                   paused :: IsPaused,
+                   enemies :: AliveEnemies,
+                   bullets :: ShotBullets,
+                   player :: Player
                  }
 
 initialState :: GameState
-initialState = GameState ShowNothing 0
+initialState = GameState 0 0 MainMenu NotPaused [] [] (Player (Point 0 0) (BoundingBox (Point 0 0) 100 50) 3)
 
 
 --Now the data types we made ourselves:
@@ -82,3 +87,24 @@ inBox (Point px py) (BoundingBox (Point x y) w h) = and [px >= x, px <= x + w, p
 
 corners :: BoundingBox -> [Point]
 corners (BoundingBox ll@(Point x y) w h) = [ll, Point (x+w) y, Point (x+h) (y+h), Point x (y+h)]
+
+
+
+--Player-related:
+
+instance CanMove Player where
+  getPos (Player p _ _) = p
+  setPos (Player p bb l) q = Player q bb l
+
+instance HasCollision Player where
+  getBB (Player _ bb _) = bb
+
+moveDirection :: Char -> Vector
+moveDirection 'w' = Vector 0 1
+moveDirection 'a' = Vector (-1) 0
+moveDirection 's' = Vector 0 (-1)
+moveDirection 'd' = Vector 1 0
+moveDirection _ = Vector 0 0
+
+scalarMult :: Float -> Vector -> Vector
+a `scalarMult` (Vector x y) = Vector (a*x) (a*y)
