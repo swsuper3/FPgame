@@ -25,17 +25,17 @@ initialState = GameState 0 0 MainMenu NotPaused [] [] (Player (Point 0 0) (Bound
 
 --Now the data types we made ourselves:
 
-data Player = Player Point BoundingBox Lives
+data Player = Player {playerPosition :: Point, playerBB :: BoundingBox, playerLives :: Lives}
 
-data Enemy = Enemy Point BoundingBox Lives
+data Enemy = Enemy {enemyPosition :: Point, enemyBB :: BoundingBox, enemyLives :: Lives}
 type AliveEnemies = [Enemy]
 
-data Bullet = Bullet Point BoundingBox Point Owner
+data Bullet = Bullet {bulletPosition :: Point, bulletBB :: BoundingBox, bulletDirection :: Vector, bulletOwner :: Owner}
 type ShotBullets = [Bullet]
 data Owner = Friendly | Hostile
 
-type Lives = Int
-type Score = Int
+newtype Lives = Lives Int
+newtype Score = Score Int
 
 data IsPaused = NotPaused | Paused
 
