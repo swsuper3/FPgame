@@ -20,22 +20,23 @@ data GameState = GameState {
                  }
 
 initialState :: GameState
-initialState = GameState 0 0 MainMenu NotPaused [] [] (Player (Point 0 0) (BoundingBox (Point 0 0) 100 50) 3)
+initialState = GameState 0 (Score 0) MainMenu NotPaused [] [] (Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3})
 
 
 --Now the data types we made ourselves:
 
-data Player = Player {playerPosition :: Point, playerBB :: BoundingBox, playerLives :: Lives}
+data Player = Player {playerPosition :: Point, playerDims :: Dimensions, playerLives :: Lives}
 
-data Enemy = Enemy {enemyPosition :: Point, enemyBB :: BoundingBox, enemyLives :: Lives}
+data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives}
 type AliveEnemies = [Enemy]
 
-data Bullet = Bullet {bulletPosition :: Point, bulletBB :: BoundingBox, bulletDirection :: Vector, bulletOwner :: Owner}
+data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner}
 type ShotBullets = [Bullet]
 data Owner = Friendly | Hostile
 
 newtype Lives = Lives Int
 newtype Score = Score Int
+type Dimensions = (Float, Float) --width, height
 
 data IsPaused = NotPaused | Paused
 
@@ -97,7 +98,8 @@ instance CanMove Player where
   setPos (Player p bb l) q = Player q bb l
 
 instance HasCollision Player where
-  getBB (Player _ bb _) = bb
+  getBB p = BoundingBox {lowerLeft = playerPosition p, width = w, height = h}
+    where (w, h) = playerDims p
 
 moveDirection :: Char -> Vector
 moveDirection 'w' = Vector 0 1
