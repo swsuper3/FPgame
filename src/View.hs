@@ -16,6 +16,6 @@ view = return . viewPure
 
 viewPure :: GameState -> Picture
 viewPure gstate = translate playerX playerY (color red playerBox)
-  where playerBB = getBB (player gstate)
+  where (w, h) = playerDims (player gstate)
         Point playerX playerY = getPos (player gstate)
-        playerBox = rectangleSolid (width playerBB) (height playerBB)
+        playerBox = rectangleSolid w h
