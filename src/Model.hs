@@ -78,7 +78,7 @@ move x (Vector vecx vecy) = setPos x newPoint
 class HasCollision a where
   getBB :: a -> BoundingBox
 
-intersects :: HasCollision a => a -> a -> Bool
+intersects :: (HasCollision a, HasCollision b) => a -> b -> Bool
 intersects one two = any (`inBox` boxOne) (corners boxTwo) || any (`inBox` boxTwo) (corners boxOne)
   where boxOne = getBB one
         boxTwo = getBB two 
