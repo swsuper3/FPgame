@@ -7,6 +7,7 @@ import Model
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
+import Data.Set
 
 -- -- | Handle one iteration of the game
 -- step :: Float -> GameState -> IO GameState
@@ -24,15 +25,15 @@ import System.Random
 step :: Float -> GameState -> IO GameState
 step secs gstate
   =
-    return $ gstate { elapsedTime = elapsedTime gstate + secs }
+    return $ gstate { elapsedTime = elapsedTime gstate + secs, player = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate))) }
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
 input e gstate = return (inputKey e gstate)
 
 inputKey :: Event -> GameState -> GameState
-inputKey (EventKey (Char c) _ _ _) gstate
-  = gstate { player = move (player gstate) (10 `scalarMult` moveDirection c)}
+inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)}
+inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}
 inputKey _ gstate = gstate
     
 --     -- If the user presses a character key, show that one

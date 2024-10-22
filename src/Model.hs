@@ -2,6 +2,9 @@
 --   which represent the state of the game
 module Model where
 
+import Data.Set
+import Graphics.Gloss.Interface.IO.Game (Key (Char))
+
 data InfoToShow = ShowNothing
                 | ShowANumber Int
                 | ShowAChar   Char
@@ -10,6 +13,7 @@ data InfoToShow = ShowNothing
 -- nO_SECS_BETWEEN_CYCLES = 5
 
 data GameState = GameState {
+                   pressedKeys :: Set Key,
                    elapsedTime :: Float,
                    score :: Score,
                    status :: PlayingStatus,
@@ -20,7 +24,11 @@ data GameState = GameState {
                  }
 
 initialState :: GameState
-initialState = GameState 0 (Score 0) MainMenu NotPaused [] [] (Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3})
+initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [],
+bullets = [], player = initialPlayer}
+
+initialPlayer :: Player
+initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
 
 
 --Now the data types we made ourselves:
@@ -55,7 +63,7 @@ type EnterTime = Int
 --END TECHNICALLY OPTIONAL
 
 data Point  = Point Float Float
-data Vector = Vector Float Float
+data Vector = Vector Float Float deriving(Show, Eq, Ord)
 
 type Playtime = Float
 
@@ -110,3 +118,12 @@ moveDirection _ = Vector 0 0
 
 scalarMult :: Float -> Vector -> Vector
 a `scalarMult` (Vector x y) = Vector (a*x) (a*y)
+
+vectorSum :: Vector -> Vector -> Vector
+vectorSum (Vector a b) (Vector c d) = Vector (a + c) (b + d)
+
+getPlayerMovementVector :: Set Key -> Vector
+getPlayerMovementVector pressedKeys = Data.Set.foldr vectorSum (Vector 0 0) vectorSet
+  where charSet = Data.Set.map getChar pressedKeys
+        getChar (Char c) = c
+        vectorSet = Data.Set.map moveDirection charSet
