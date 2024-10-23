@@ -2,8 +2,9 @@
 --   which represent the state of the game
 module Model where
 
-import Data.Set
+import Data.Set (Set, empty, toList)
 import Graphics.Gloss.Interface.IO.Game (Key (Char))
+import Data.Maybe (catMaybes)
 
 data InfoToShow = ShowNothing
                 | ShowANumber Int
@@ -122,8 +123,13 @@ a `scalarMult` (Vector x y) = Vector (a*x) (a*y)
 vectorSum :: Vector -> Vector -> Vector
 vectorSum (Vector a b) (Vector c d) = Vector (a + c) (b + d)
 
+--This function figures out how what direction to move the player in depending on the pressed keys.
 getPlayerMovementVector :: Set Key -> Vector
-getPlayerMovementVector pressedKeys = Data.Set.foldr vectorSum (Vector 0 0) vectorSet
-  where charSet = Data.Set.map getChar pressedKeys
-        getChar (Char c) = c
-        vectorSet = Data.Set.map moveDirection charSet
+getPlayerMovementVector pressedKeys = foldr vectorSum (Vector 0 0) vectors
+  where chars = map extractCharacter (toList pressedKeys)
+        parsedChars = catMaybes chars
+        vectors = map moveDirection parsedChars
+
+extractCharacter :: Key -> Maybe Char
+extractCharacter (Char c) = Just c
+extractCharacter _ = Nothing
