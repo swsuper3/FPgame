@@ -2,35 +2,49 @@
 --   which represent the state of the game
 module Model where
 
+import Data.Set
+import Graphics.Gloss.Interface.IO.Game (Key (Char))
+
 data InfoToShow = ShowNothing
                 | ShowANumber Int
                 | ShowAChar   Char
 
-nO_SECS_BETWEEN_CYCLES :: Float
-nO_SECS_BETWEEN_CYCLES = 5
+-- nO_SECS_BETWEEN_CYCLES :: Float
+-- nO_SECS_BETWEEN_CYCLES = 5
 
 data GameState = GameState {
-                   infoToShow  :: InfoToShow
-                 , elapsedTime :: Float
+                   pressedKeys :: Set Key,
+                   elapsedTime :: Float,
+                   score :: Score,
+                   status :: PlayingStatus,
+                   paused :: IsPaused,
+                   enemies :: AliveEnemies,
+                   bullets :: ShotBullets,
+                   player :: Player
                  }
 
 initialState :: GameState
-initialState = GameState ShowNothing 0
+initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [],
+bullets = [], player = initialPlayer}
+
+initialPlayer :: Player
+initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
 
 
 --Now the data types we made ourselves:
 
-data Player = Player Point BoundingBox Lives
+data Player = Player {playerPosition :: Point, playerDims :: Dimensions, playerLives :: Lives}
 
-data Enemy = Enemy Point BoundingBox Lives
+data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives}
 type AliveEnemies = [Enemy]
 
-data Bullet = Bullet Point BoundingBox Point Owner
+data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner}
 type ShotBullets = [Bullet]
 data Owner = Friendly | Hostile
 
-type Lives = Int
-type Score = Int
+newtype Lives = Lives Int
+newtype Score = Score Int
+type Dimensions = (Float, Float) --width, height
 
 data IsPaused = NotPaused | Paused
 
@@ -49,14 +63,14 @@ type EnterTime = Int
 --END TECHNICALLY OPTIONAL
 
 data Point  = Point Float Float
-data Vector = Vector Float Float
+data Vector = Vector Float Float deriving(Show, Eq, Ord)
 
 type Playtime = Float
 
 data BoundingBox = BoundingBox { 
                     lowerLeft :: Point
-                  , width     :: Int
-                  , height    :: Int 
+                  , width     :: Float
+                  , height    :: Float 
                   }
 
 
@@ -72,5 +86,44 @@ move x (Vector vecx vecy) = setPos x newPoint
 class HasCollision a where
   getBB :: a -> BoundingBox
 
-intersects :: HasCollision a => a -> a -> Bool
-intersects = undefined
+intersects :: (HasCollision a, HasCollision b) => a -> b -> Bool
+intersects one two = any (`inBox` boxOne) (corners boxTwo) || any (`inBox` boxTwo) (corners boxOne)
+  where boxOne = getBB one
+        boxTwo = getBB two 
+
+inBox :: Point -> BoundingBox -> Bool
+inBox (Point px py) (BoundingBox (Point x y) w h) = and [px >= x, px <= x + w, py >= y, py <= y + h]
+
+corners :: BoundingBox -> [Point]
+corners (BoundingBox ll@(Point x y) w h) = [ll, Point (x+w) y, Point (x+h) (y+h), Point x (y+h)]
+
+
+
+--Player-related:
+
+instance CanMove Player where
+  getPos (Player p _ _) = p
+  setPos (Player p bb l) q = Player q bb l
+
+instance HasCollision Player where
+  getBB p = BoundingBox {lowerLeft = playerPosition p, width = w, height = h}
+    where (w, h) = playerDims p
+
+moveDirection :: Char -> Vector
+moveDirection 'w' = Vector 0 1
+moveDirection 'a' = Vector (-1) 0
+moveDirection 's' = Vector 0 (-1)
+moveDirection 'd' = Vector 1 0
+moveDirection _ = Vector 0 0
+
+scalarMult :: Float -> Vector -> Vector
+a `scalarMult` (Vector x y) = Vector (a*x) (a*y)
+
+vectorSum :: Vector -> Vector -> Vector
+vectorSum (Vector a b) (Vector c d) = Vector (a + c) (b + d)
+
+getPlayerMovementVector :: Set Key -> Vector
+getPlayerMovementVector pressedKeys = Data.Set.foldr vectorSum (Vector 0 0) vectorSet
+  where charSet = Data.Set.map getChar pressedKeys
+        getChar (Char c) = c
+        vectorSet = Data.Set.map moveDirection charSet
