@@ -14,8 +14,12 @@ view = return . viewPure
 --   ShowANumber n -> color green (text (show n))
 --   ShowAChar   c -> color green (text [c])
 
-viewPure :: GameState -> Picture
-viewPure gstate = translate playerX playerY (color red playerBox)
+viewPure :: GameState -> Picture  --To draw something alongside the player, add another view function, and at it to the list in this function.
+viewPure gstate = pictures [viewPlayer gstate]
+
+
+viewPlayer :: GameState -> Picture
+viewPlayer gstate = translate playerX playerY (color red playerBox)
   where (w, h) = playerDims (player gstate)
         Point playerX playerY = getPos (player gstate)
         playerBox = rectangleSolid w h
