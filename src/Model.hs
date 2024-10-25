@@ -116,8 +116,9 @@ instance CanMove Player where
     where newPos = Point (clamp (-xBound, xBound) x) (clamp (-yBound, yBound) y)
           (Point x y) = q 
           (screenX, screenY) = screenDims
-          xBound = screenX / 2
-          yBound = screenY / 2
+          (playerWidth, playerHeight) = pDims
+          xBound = (screenX / 2) - (playerWidth / 2)
+          yBound = (screenY / 2) - (playerHeight / 2)
 
 instance HasCollision Player where
   getBB p = BoundingBox {lowerLeft = playerPosition p, width = w, height = h}
