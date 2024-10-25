@@ -7,8 +7,12 @@ import Graphics.Gloss.Interface.IO.Game (Key (Char))
 import Data.Maybe (catMaybes)
 import Data.Ord (clamp)
 
-screenDims :: (Int, Int)
+screenDims :: Dimensions
 screenDims = (400, 400)
+
+intScreenDims :: (Int, Int)
+intScreenDims = (round a, round b)
+  where (a, b) = screenDims
 
 data InfoToShow = ShowNothing
                 | ShowANumber Int
@@ -112,8 +116,8 @@ instance CanMove Player where
     where newPos = Point (clamp (-xBound, xBound) x) (clamp (-yBound, yBound) y)
           (Point x y) = q 
           (screenX, screenY) = screenDims
-          xBound = fromIntegral (screenX `div` 2) :: Float
-          yBound = fromIntegral (screenY `div` 2) :: Float
+          xBound = screenX / 2
+          yBound = screenY / 2
 
 instance HasCollision Player where
   getBB p = BoundingBox {lowerLeft = playerPosition p, width = w, height = h}
