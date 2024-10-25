@@ -5,6 +5,10 @@ module Model where
 import Data.Set (Set, empty, toList)
 import Graphics.Gloss.Interface.IO.Game (Key (Char))
 import Data.Maybe (catMaybes)
+import Data.Ord (clamp)
+
+screenDims :: (Int, Int)
+screenDims = (400, 400)
 
 data InfoToShow = ShowNothing
                 | ShowANumber Int
@@ -104,7 +108,12 @@ corners (BoundingBox ll@(Point x y) w h) = [ll, Point (x+w) y, Point (x+h) (y+h)
 
 instance CanMove Player where
   getPos (Player p _ _) = p
-  setPos (Player p bb l) q = Player q bb l
+  setPos (Player _ pDims l) q = Player newPos pDims l
+    where newPos = Point (clamp (-xBound, xBound) x) (clamp (-yBound, yBound) y)
+          (Point x y) = q 
+          (screenX, screenY) = screenDims
+          xBound = fromIntegral (screenX `div` 2) :: Float
+          yBound = fromIntegral (screenY `div` 2) :: Float
 
 instance HasCollision Player where
   getBB p = BoundingBox {lowerLeft = playerPosition p, width = w, height = h}
