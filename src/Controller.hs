@@ -28,7 +28,12 @@ step secs gstate
     return $ gstate { elapsedTime = elapsedTime gstate + secs, player = stepPlayer gstate, enemies = stepEnemies gstate}
 
 stepPlayer :: GameState -> Player
-stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
+stepPlayer gstate = checkCollisionPlayer gstate $ move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
+
+checkCollisionPlayer :: GameState -> Player -> Player
+checkCollisionPlayer gstate player | any (`intersects` player) (enemies gstate) = loseLife player
+                                   | otherwise                                  = player
+
 
 stepEnemies :: GameState -> AliveEnemies
 stepEnemies gstate = map (`move` (Vector (-5) 0)) (enemies gstate)
