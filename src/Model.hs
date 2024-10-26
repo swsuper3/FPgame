@@ -147,3 +147,17 @@ getPlayerMovementVector pressedKeys = foldr vectorSum (Vector 0 0) vectors
 extractCharacter :: Key -> Maybe Char
 extractCharacter (Char c) = Just c
 extractCharacter _ = Nothing
+
+loseLife :: Player -> Player
+loseLife p = p {playerLives = Lives(n - 1)}
+  where (Lives n) = playerLives p
+
+--Enemy-related:
+
+instance CanMove Enemy where
+  getPos = enemyPosition
+  setPos e p = e {enemyPosition = p}
+
+instance HasCollision Enemy where
+  getBB e = BoundingBox {lowerLeft = enemyPosition e, width = w, height = h}
+    where (w, h) = enemyDims e
