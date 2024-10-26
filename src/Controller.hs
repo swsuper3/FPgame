@@ -7,7 +7,7 @@ import Model
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
-import Data.Set
+import Data.Set (insert, delete)
 
 -- -- | Handle one iteration of the game
 -- step :: Float -> GameState -> IO GameState
@@ -25,7 +25,13 @@ import Data.Set
 step :: Float -> GameState -> IO GameState
 step secs gstate
   =
-    return $ gstate { elapsedTime = elapsedTime gstate + secs, player = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate))) }
+    return $ gstate { elapsedTime = elapsedTime gstate + secs, player = stepPlayer gstate, enemies = stepEnemies gstate}
+
+stepPlayer :: GameState -> Player
+stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
+
+stepEnemies :: GameState -> AliveEnemies
+stepEnemies gstate = map (`move` (Vector (-5) 0)) (enemies gstate)
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
