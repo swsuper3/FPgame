@@ -15,7 +15,7 @@ view = return . viewPure
 --   ShowAChar   c -> color green (text [c])
 
 viewPure :: GameState -> Picture  --To draw something alongside the player, add another view function, and at it to the list in this function.
-viewPure gstate = pictures [viewPlayer gstate, viewLives gstate]
+viewPure gstate = pictures [viewPlayer gstate, viewLives gstate, viewEnemies gstate]
 
 
 viewPlayer :: GameState -> Picture
@@ -29,3 +29,12 @@ viewLives gstate = translate (-0.5 * screenX) (-0.5 * screenY) (scale 0.5 0.5 li
   where livesPicture = color green (text (show n))
         (Lives n) = playerLives (player gstate)
         (screenX, screenY) = screenDims
+
+viewEnemies :: GameState -> Picture
+viewEnemies gstate = pictures $ map viewEnemy (enemies gstate)
+
+viewEnemy :: Enemy -> Picture
+viewEnemy e = translate eX eY (color green enemyBox)
+  where (w, h) = enemyDims e
+        Point eX eY = getPos e
+        enemyBox = rectangleSolid w h
