@@ -51,7 +51,7 @@ data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletD
 type ShotBullets = [Bullet]
 data Owner = Friendly | Hostile
 
-newtype Lives = Lives Int
+newtype Lives = Lives Int deriving (Show, Eq, Ord)
 newtype Score = Score Int
 type Dimensions = (Float, Float) --width, height
 
