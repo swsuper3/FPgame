@@ -33,11 +33,15 @@ data GameState = GameState {
                  }
 
 initialState :: GameState
-initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [],
+initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [dummyEnemy],
 bullets = [], player = initialPlayer}
 
 initialPlayer :: Player
 initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
+
+dummyEnemy :: Enemy
+dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives 1}
+  where (w, h) = screenDims
 
 
 --Now the data types we made ourselves:
