@@ -125,8 +125,10 @@ instance CanMove Player where
           yBound = (screenY / 2) - (playerHeight / 2)
 
 instance HasCollision Player where
-  getBB p = BoundingBox {lowerLeft = playerPosition p, width = w, height = h}
+  getBB p = BoundingBox {lowerLeft = lowerLeftPosition, width = w, height = h}
     where (w, h) = playerDims p
+          Point x y = playerPosition p
+          lowerLeftPosition = Point (x - 0.5*w) (y - 0.5*h)
 
 moveDirection :: Char -> Vector
 moveDirection 'w' = Vector 0 1
@@ -163,5 +165,7 @@ instance CanMove Enemy where
   setPos e p = e {enemyPosition = p}
 
 instance HasCollision Enemy where
-  getBB e = BoundingBox {lowerLeft = enemyPosition e, width = w, height = h}
+  getBB e = BoundingBox {lowerLeft = lowerLeftPosition, width = w, height = h}
     where (w, h) = enemyDims e
+          Point x y = enemyPosition e
+          lowerLeftPosition = Point (x - 0.5*w) (y - 0.5*h)
