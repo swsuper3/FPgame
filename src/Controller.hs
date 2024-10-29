@@ -8,6 +8,7 @@ import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
 import Data.Set (insert, delete)
+import Debug.Trace (trace)
 
 -- -- | Handle one iteration of the game
 -- step :: Float -> GameState -> IO GameState
@@ -25,15 +26,21 @@ import Data.Set (insert, delete)
 step :: Float -> GameState -> IO GameState
 step secs gstate
   =
-    return $ gstate { elapsedTime = elapsedTime gstate + secs, player = stepPlayer gstate, enemies = stepEnemies gstate}
+    return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs, player = stepPlayer checkedCollisionGstate, enemies = stepEnemies checkedCollisionGstate}
+      where checkedCollisionGstate = checkCollisionPlayer gstate
 
 stepPlayer :: GameState -> Player
-stepPlayer gstate = checkCollisionPlayer gstate $ move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
+stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
 
-checkCollisionPlayer :: GameState -> Player -> Player
-checkCollisionPlayer gstate player | any (`intersects` player) (enemies gstate) = loseLife player
-                                   | otherwise                                  = player
+checkCollisionPlayer :: GameState -> GameState
+checkCollisionPlayer gstate = gstate {player = newPlayer, enemies = withoutDeadEnemies}
+  where (newEnemies, newPlayer) = hostileCollisionCheck (enemies gstate) (player gstate)
+        withoutDeadEnemies = clearDeads newEnemies
 
+hostileCollisionCheck :: CanHurtPlayer a => [a] -> Player -> ([a], Player)
+hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
+  where processEnemy e (es, p') | e `intersects` p' = (hurtSelf e : es, loseLife p')
+                                | otherwise         = (         e : es,          p')
 
 stepEnemies :: GameState -> AliveEnemies
 stepEnemies gstate = map (`move` (Vector (-5) 0)) (enemies gstate)
