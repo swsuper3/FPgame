@@ -108,7 +108,7 @@ inBox :: Point -> BoundingBox -> Bool
 inBox (Point px py) (BoundingBox (Point x y) w h) = and [px >= x, px <= x + w, py >= y, py <= y + h]
 
 corners :: BoundingBox -> [Point]
-corners (BoundingBox ll@(Point x y) w h) = [ll, Point (x+w) y, Point (x+h) (y+h), Point x (y+h)]
+corners (BoundingBox ll@(Point x y) w h) = [ll, Point (x+w) y, Point (x+w) (y+h), Point x (y+h)]
 
 
 
