@@ -51,7 +51,7 @@ data Player = Player {playerPosition :: Point, playerDims :: Dimensions, playerL
 data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives}
 type AliveEnemies = [Enemy]
 
-data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner}
+data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner, bulletLives :: Lives}
 type ShotBullets = [Bullet]
 data Owner = Friendly | Hostile
 
@@ -110,7 +110,9 @@ inBox (Point px py) (BoundingBox (Point x y) w h) = and [px >= x, px <= x + w, p
 corners :: BoundingBox -> [Point]
 corners (BoundingBox ll@(Point x y) w h) = [ll, Point (x+w) y, Point (x+w) (y+h), Point x (y+h)]
 
-
+class HasCollision a => CanHurtPlayer a where
+  hurtSelf :: a -> a        --Remove a life from the enemy/bullet that hurt the player
+  clearDeads :: [a] -> [a]  --Clear all the enemies/bullets with zero lives
 
 --Player-related:
 
@@ -169,3 +171,12 @@ instance HasCollision Enemy where
     where (w, h) = enemyDims e
           Point x y = enemyPosition e
           lowerLeftPosition = Point (x - 0.5*w) (y - 0.5*h)
+
+instance CanHurtPlayer Enemy where
+  hurtSelf e = e {enemyLives = newLives}
+    where newLives = Lives (oldLives - 1)
+          (Lives oldLives) = enemyLives e
+  clearDeads [] = []
+  clearDeads (x:xs) = case (enemyLives x) of
+                    Lives 0 -> clearDeads xs
+                    _ -> x : clearDeads xs
