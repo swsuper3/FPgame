@@ -45,6 +45,9 @@ hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
 stepEnemies :: GameState -> AliveEnemies
 stepEnemies gstate = map (`move` (Vector (-5) 0)) (enemies gstate)
 
+stepBullets :: GameState -> ShotBullets
+stepBullets gstate = map (\b -> move b (bulletDirection b)) (bullets gstate)
+
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
 input e gstate = return (inputKey e gstate)
