@@ -180,3 +180,24 @@ instance CanHurtPlayer Enemy where
   clearDeads (x:xs) = case (enemyLives x) of
                     Lives 0 -> clearDeads xs
                     _ -> x : clearDeads xs
+
+--Bullet-related
+
+instance CanMove Bullet where
+  getPos = bulletPosition
+  setPos b p = b {bulletPosition = p}
+
+instance HasCollision Bullet where
+  getBB b = BoundingBox {lowerLeft = lowerLeftPosition, width = w, height = h}
+    where (w, h) = bulletDims b
+          Point x y = bulletPosition b
+          lowerLeftPosition = Point (x - 0.5*w) (y - 0.5*h)
+
+instance CanHurtPlayer Bullet where
+  hurtSelf b = b {bulletLives = newLives}
+    where newLives = Lives (oldLives - 1)
+          Lives oldLives = bulletLives b
+  clearDeads [] = []
+  clearDeads (x:xs) = case (bulletLives x) of
+                      Lives 0 -> clearDeads xs
+                      _ -> x : clearDeads xs
