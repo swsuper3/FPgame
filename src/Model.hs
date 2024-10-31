@@ -34,7 +34,7 @@ data GameState = GameState {
                  }
 
 initialState :: GameState
-initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [],
+initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [dummyEnemy],
 bullets = [], player = initialPlayer, playtime = 0}
 
 initialPlayer :: Player
