@@ -203,4 +203,6 @@ instance CanHurtPlayer Bullet where
                       _ -> x : clearDeads xs
 
 friendlyBullet :: Player -> Bullet
-friendlyBullet p = Bullet {bulletPosition = playerPosition p, bulletDims = (5, 5), bulletDirection = Vector 1 0, bulletOwner = Friendly, bulletLives = Lives 1}
+friendlyBullet p = Bullet {bulletPosition = Point (playerX + (0.5 * playerWidth)) playerY, bulletDims = (5, 5), bulletDirection = Vector 1 0, bulletOwner = Friendly, bulletLives = Lives 1}
+  where Point playerX playerY = playerPosition p
+        (playerWidth, _) = playerDims p
