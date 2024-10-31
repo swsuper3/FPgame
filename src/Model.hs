@@ -5,6 +5,14 @@ module Model where
 import Data.Set (Set, empty, toList)
 import Graphics.Gloss.Interface.IO.Game (Key (Char))
 import Data.Maybe (catMaybes)
+import Data.Ord (clamp)
+
+screenDims :: Dimensions
+screenDims = (400, 400)
+
+intScreenDims :: (Int, Int)
+intScreenDims = (round a, round b)
+  where (a, b) = screenDims
 
 data InfoToShow = ShowNothing
                 | ShowANumber Int
@@ -32,6 +40,10 @@ bullets = [], player = initialPlayer, playtime = 0}
 initialPlayer :: Player
 initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
 
+dummyEnemy :: Enemy
+dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives 1}
+  where (w, h) = screenDims
+
 
 --Now the data types we made ourselves:
 
@@ -40,11 +52,11 @@ data Player = Player {playerPosition :: Point, playerDims :: Dimensions, playerL
 data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives}
 type AliveEnemies = [Enemy]
 
-data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner}
+data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner, bulletLives :: Lives}
 type ShotBullets = [Bullet]
 data Owner = Friendly | Hostile
 
-newtype Lives = Lives Int
+newtype Lives = Lives Int deriving (Show, Eq, Ord)
 newtype Score = Score Int
 type Dimensions = (Float, Float) --width, height
 
@@ -98,19 +110,29 @@ inBox :: Point -> BoundingBox -> Bool
 inBox (Point px py) (BoundingBox (Point x y) w h) = and [px >= x, px <= x + w, py >= y, py <= y + h]
 
 corners :: BoundingBox -> [Point]
-corners (BoundingBox ll@(Point x y) w h) = [ll, Point (x+w) y, Point (x+h) (y+h), Point x (y+h)]
+corners (BoundingBox ll@(Point x y) w h) = [ll, Point (x+w) y, Point (x+w) (y+h), Point x (y+h)]
 
-
+class HasCollision a => CanHurtPlayer a where
+  hurtSelf :: a -> a        --Remove a life from the enemy/bullet that hurt the player
+  clearDeads :: [a] -> [a]  --Clear all the enemies/bullets with zero lives
 
 --Player-related:
 
 instance CanMove Player where
   getPos (Player p _ _) = p
-  setPos (Player p bb l) q = Player q bb l
+  setPos (Player _ pDims l) q = Player newPos pDims l
+    where newPos = Point (clamp (-xBound, xBound) x) (clamp (-yBound, yBound) y)
+          (Point x y) = q 
+          (screenX, screenY) = screenDims
+          (playerWidth, playerHeight) = pDims
+          xBound = (screenX / 2) - (playerWidth / 2)
+          yBound = (screenY / 2) - (playerHeight / 2)
 
 instance HasCollision Player where
-  getBB p = BoundingBox {lowerLeft = playerPosition p, width = w, height = h}
+  getBB p = BoundingBox {lowerLeft = lowerLeftPosition, width = w, height = h}
     where (w, h) = playerDims p
+          Point x y = playerPosition p
+          lowerLeftPosition = Point (x - 0.5*w) (y - 0.5*h)
 
 moveDirection :: Char -> Vector
 moveDirection 'w' = Vector 0 1
@@ -135,6 +157,57 @@ getPlayerMovementVector pressedKeys = foldr vectorSum (Vector 0 0) vectors
 extractCharacter :: Key -> Maybe Char
 extractCharacter (Char c) = Just c
 extractCharacter _ = Nothing
+
+loseLife :: Player -> Player
+loseLife p = p {playerLives = Lives(n - 1)}
+  where (Lives n) = playerLives p
+
+--Enemy-related:
+
+instance CanMove Enemy where
+  getPos = enemyPosition
+  setPos e p = e {enemyPosition = p}
+
+instance HasCollision Enemy where
+  getBB e = BoundingBox {lowerLeft = lowerLeftPosition, width = w, height = h}
+    where (w, h) = enemyDims e
+          Point x y = enemyPosition e
+          lowerLeftPosition = Point (x - 0.5*w) (y - 0.5*h)
+
+instance CanHurtPlayer Enemy where
+  hurtSelf e = e {enemyLives = newLives}
+    where newLives = Lives (oldLives - 1)
+          (Lives oldLives) = enemyLives e
+  clearDeads [] = []
+  clearDeads (x:xs) = case (enemyLives x) of
+                    Lives 0 -> clearDeads xs
+                    _ -> x : clearDeads xs
+
+--Bullet-related
+
+instance CanMove Bullet where
+  getPos = bulletPosition
+  setPos b p = b {bulletPosition = p}
+
+instance HasCollision Bullet where
+  getBB b = BoundingBox {lowerLeft = lowerLeftPosition, width = w, height = h}
+    where (w, h) = bulletDims b
+          Point x y = bulletPosition b
+          lowerLeftPosition = Point (x - 0.5*w) (y - 0.5*h)
+
+instance CanHurtPlayer Bullet where
+  hurtSelf b = b {bulletLives = newLives}
+    where newLives = Lives (oldLives - 1)
+          Lives oldLives = bulletLives b
+  clearDeads [] = []
+  clearDeads (x:xs) = case (bulletLives x) of
+                      Lives 0 -> clearDeads xs
+                      _ -> x : clearDeads xs
+
+friendlyBullet :: Player -> Bullet
+friendlyBullet p = Bullet {bulletPosition = Point (playerX + (0.5 * playerWidth)) playerY, bulletDims = (5, 5), bulletDirection = Vector 1 0, bulletOwner = Friendly, bulletLives = Lives 1}
+  where Point playerX playerY = playerPosition p
+        (playerWidth, _) = playerDims p
 
 
 -- Playtime functionality:

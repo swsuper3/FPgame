@@ -7,7 +7,8 @@ import Model
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
-import Data.Set
+import Data.Set (insert, delete)
+import Debug.Trace (trace)
 
 -- -- | Handle one iteration of the game
 -- step :: Float -> GameState -> IO GameState
@@ -29,17 +30,61 @@ step secs gstate
                         paused      = updatePause gstate
                       }
   | otherwise
-    = return $ gstate { elapsedTime = elapsedTime gstate + secs,
-                      player      = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate))),
-                      playtime    = updatePlaytime gstate secs,
-                      paused      = updatePause gstate
-                      }
+    = return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
+                                      player = stepPlayer checkedCollisionGstate,
+                                      enemies = stepEnemies checkedCollisionGstate,
+                                      bullets = stepBullets checkedCollisionGstate,
+                                      playtime = updatePlaytime gstate secs,
+                                      paused = updatePause gstate}
+      where checkedCollisionGstate = collision gstate
+
+stepPlayer :: GameState -> Player
+stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
+
+collision :: GameState -> GameState
+collision = checkCollisionPlayer . friendlyBulletCollision
+
+checkCollisionPlayer :: GameState -> GameState
+checkCollisionPlayer gstate = gstate {player = newPlayer, enemies = withoutDeadEnemies}
+  where (newEnemies, newPlayer) = hostileCollisionCheck (enemies gstate) (player gstate)
+        withoutDeadEnemies = clearDeads newEnemies
+
+friendlyBulletCollision :: GameState -> GameState
+friendlyBulletCollision gstate = gstate {enemies = withoutDeadEnemies, bullets = withoutDeadBullets}
+  where (newBullets, newEnemies) = multiBulletCollision (bullets gstate) (enemies gstate)
+        withoutDeadEnemies = clearDeads newEnemies
+        withoutDeadBullets = clearDeads newBullets
+
+multiBulletCollision :: ShotBullets -> AliveEnemies -> (ShotBullets, AliveEnemies)
+multiBulletCollision bulletList enemyList = foldr f ([], enemyList) bulletList
+  where f b (bs, es) = 
+                  let (checkedBullet, checkedEnemies) = singleBulletCollision b es
+                  in (checkedBullet : bs, checkedEnemies)
+        
+
+singleBulletCollision :: Bullet -> AliveEnemies -> (Bullet, AliveEnemies)
+singleBulletCollision b = foldr processEnemy (b, [])
+  where processEnemy e (b, es) | e `intersects` b = (hurtSelf b, hurtSelf e : es)
+                               | otherwise        = (         b,          e : es)
+
+hostileCollisionCheck :: CanHurtPlayer a => [a] -> Player -> ([a], Player)
+hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
+  where processEnemy e (es, p') | e `intersects` p' = (hurtSelf e : es, loseLife p')
+                                | otherwise         = (         e : es,          p')
+
+stepEnemies :: GameState -> AliveEnemies
+stepEnemies gstate = map (`move` (Vector (-5) 0)) (enemies gstate)
+
+stepBullets :: GameState -> ShotBullets
+stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
+
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
 input e gstate = return (inputKey e gstate)
 
 inputKey :: Event -> GameState -> GameState
+inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = gstate {bullets = friendlyBullet (player gstate) : bullets gstate}
 inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)}
 inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}
 inputKey _ gstate = gstate
