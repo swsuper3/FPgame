@@ -15,7 +15,8 @@ view = return . viewPure
 --   ShowAChar   c -> color green (text [c])
 
 viewPure :: GameState -> Picture  --To draw something alongside the player, add another view function, and at it to the list in this function.
-viewPure gstate = pictures [viewPlayer gstate, viewLives gstate, viewEnemies gstate, viewBullets gstate]
+viewPure gstate = pictures [viewPlayer gstate, viewLives gstate, viewEnemies gstate, viewBullets gstate, viewTime gstate]
+
 
 
 viewPlayer :: GameState -> Picture
@@ -47,3 +48,6 @@ viewBullet b = translate bX bY (color blue bulletBox)
   where (w, h) = bulletDims b
         Point bX bY = bulletPosition b
         bulletBox = rectangleSolid w h
+
+viewTime :: GameState -> Picture
+viewTime gstate = color white (text (show (playtime gstate)))

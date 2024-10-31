@@ -25,8 +25,17 @@ import Debug.Trace (trace)
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
 step secs gstate
-  =
-    return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs, player = stepPlayer checkedCollisionGstate, enemies = stepEnemies checkedCollisionGstate, bullets = stepBullets checkedCollisionGstate}
+  | (paused gstate) == Paused
+    = return $ gstate { elapsedTime = elapsedTime gstate + secs,
+                        paused      = updatePause gstate
+                      }
+  | otherwise
+    = return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
+                                      player = stepPlayer checkedCollisionGstate,
+                                      enemies = stepEnemies checkedCollisionGstate,
+                                      bullets = stepBullets checkedCollisionGstate,
+                                      playtime = updatePlaytime gstate secs,
+                                      paused = updatePause gstate}
       where checkedCollisionGstate = collision gstate
 
 stepPlayer :: GameState -> Player
@@ -68,6 +77,7 @@ stepEnemies gstate = map (`move` (Vector (-5) 0)) (enemies gstate)
 
 stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
+
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState

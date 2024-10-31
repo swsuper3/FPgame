@@ -29,12 +29,13 @@ data GameState = GameState {
                    paused :: IsPaused,
                    enemies :: AliveEnemies,
                    bullets :: ShotBullets,
-                   player :: Player
+                   player :: Player,
+                   playtime :: Playtime
                  }
 
 initialState :: GameState
-initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [dummyEnemy],
-bullets = [], player = initialPlayer}
+initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [],
+bullets = [], player = initialPlayer, playtime = 0}
 
 initialPlayer :: Player
 initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
@@ -60,6 +61,7 @@ newtype Score = Score Int
 type Dimensions = (Float, Float) --width, height
 
 data IsPaused = NotPaused | Paused
+  deriving Eq
 
 data PlayingStatus = MainMenu | LevelMenu | PlayingLevel Level
 
@@ -206,3 +208,19 @@ friendlyBullet :: Player -> Bullet
 friendlyBullet p = Bullet {bulletPosition = Point (playerX + (0.5 * playerWidth)) playerY, bulletDims = (5, 5), bulletDirection = Vector 1 0, bulletOwner = Friendly, bulletLives = Lives 1}
   where Point playerX playerY = playerPosition p
         (playerWidth, _) = playerDims p
+
+
+-- Playtime functionality:
+updatePlaytime :: GameState -> Float -> Playtime
+updatePlaytime gstate secs
+  | (paused gstate) == Paused   = playtime gstate
+  | otherwise                   = (playtime gstate) + secs
+
+updatePause :: GameState -> IsPaused
+updatePause gstate 
+  | isPausing && (paused gstate) == Paused = NotPaused
+  | isPausing                              = Paused
+  | otherwise = paused gstate
+      where chars = map extractCharacter (toList (pressedKeys gstate))
+            parsedChars = catMaybes chars
+            isPausing = elem 'p' parsedChars
