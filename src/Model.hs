@@ -140,5 +140,14 @@ extractCharacter _ = Nothing
 -- Playtime functionality:
 updatePlaytime :: GameState -> Float -> Playtime
 updatePlaytime gstate secs
-  | (paused gstate) == Paused = playtime gstate
+  | (paused gstate) == Paused   = playtime gstate
   | otherwise                   = (playtime gstate) + secs
+
+updatePause :: GameState -> IsPaused
+updatePause gstate 
+  | isPausing && (paused gstate) == Paused = NotPaused
+  | isPausing                              = Paused
+  | otherwise = paused gstate
+      where chars = map extractCharacter (toList (pressedKeys gstate))
+            parsedChars = catMaybes chars
+            isPausing = elem 'p' parsedChars

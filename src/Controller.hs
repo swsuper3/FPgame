@@ -26,8 +26,9 @@ step :: Float -> GameState -> IO GameState
 step secs gstate
   =
     return $ gstate { elapsedTime = elapsedTime gstate + secs,
-                      player = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate))),
-                      playtime = updatePlaytime gstate secs
+                      player      = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate))),
+                      playtime    = updatePlaytime gstate secs,
+                      paused      = updatePause gstate
                       }
 
 -- | Handle user input
