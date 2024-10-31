@@ -24,8 +24,12 @@ import Data.Set
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
 step secs gstate
-  =
-    return $ gstate { elapsedTime = elapsedTime gstate + secs,
+  | (paused gstate) == Paused
+    = return $ gstate { elapsedTime = elapsedTime gstate + secs,
+                        paused      = updatePause gstate
+                      }
+  | otherwise
+    = return $ gstate { elapsedTime = elapsedTime gstate + secs,
                       player      = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate))),
                       playtime    = updatePlaytime gstate secs,
                       paused      = updatePause gstate
