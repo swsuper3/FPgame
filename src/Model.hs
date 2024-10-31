@@ -201,3 +201,6 @@ instance CanHurtPlayer Bullet where
   clearDeads (x:xs) = case (bulletLives x) of
                       Lives 0 -> clearDeads xs
                       _ -> x : clearDeads xs
+
+friendlyBullet :: Player -> Bullet
+friendlyBullet p = Bullet {bulletPosition = playerPosition p, bulletDims = (5, 5), bulletDirection = Vector 1 0, bulletOwner = Friendly, bulletLives = Lives 1}

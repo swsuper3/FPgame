@@ -26,7 +26,7 @@ import Debug.Trace (trace)
 step :: Float -> GameState -> IO GameState
 step secs gstate
   =
-    return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs, player = stepPlayer checkedCollisionGstate, enemies = stepEnemies checkedCollisionGstate}
+    return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs, player = stepPlayer checkedCollisionGstate, enemies = stepEnemies checkedCollisionGstate, bullets = stepBullets checkedCollisionGstate}
       where checkedCollisionGstate = checkCollisionPlayer gstate
 
 stepPlayer :: GameState -> Player
@@ -46,13 +46,14 @@ stepEnemies :: GameState -> AliveEnemies
 stepEnemies gstate = map (`move` (Vector (-5) 0)) (enemies gstate)
 
 stepBullets :: GameState -> ShotBullets
-stepBullets gstate = map (\b -> move b (bulletDirection b)) (bullets gstate)
+stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
 input e gstate = return (inputKey e gstate)
 
 inputKey :: Event -> GameState -> GameState
+inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = gstate {bullets = friendlyBullet (player gstate) : bullets gstate}
 inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)}
 inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}
 inputKey _ gstate = gstate
