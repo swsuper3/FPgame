@@ -26,16 +26,15 @@ import Debug.Trace (trace)
 step :: Float -> GameState -> IO GameState
 step secs gstate
   | (paused gstate) == Paused
-    = return $ gstate { elapsedTime = elapsedTime gstate + secs,
-                        paused      = updatePause gstate
+    = return $ gstate { elapsedTime = elapsedTime gstate + secs
                       }
   | otherwise
     = return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
                                       player = stepPlayer checkedCollisionGstate,
                                       enemies = stepEnemies checkedCollisionGstate,
                                       bullets = stepBullets checkedCollisionGstate,
-                                      playtime = updatePlaytime gstate secs,
-                                      paused = updatePause gstate}
+                                      playtime = updatePlaytime gstate secs
+                                      }
       where checkedCollisionGstate = collision gstate
 
 stepPlayer :: GameState -> Player
@@ -81,9 +80,13 @@ stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bul
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
-input e gstate = return (inputKey e gstate)
+input e@(EventKey (Char 'p') Down _ _) gstate = return (inputKey e gstate)
+input e gstate = case paused gstate of
+                  NotPaused -> return (inputKey e gstate)
+                  Paused    -> return gstate
 
 inputKey :: Event -> GameState -> GameState
+inputKey (EventKey (Char 'p') Down _ _) gstate = gstate {paused = togglePause (paused gstate)}
 inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = gstate {bullets = friendlyBullet (player gstate) : bullets gstate}
 inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)}
 inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}

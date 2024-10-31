@@ -216,11 +216,6 @@ updatePlaytime gstate secs
   | (paused gstate) == Paused   = playtime gstate
   | otherwise                   = (playtime gstate) + secs
 
-updatePause :: GameState -> IsPaused
-updatePause gstate 
-  | isPausing && (paused gstate) == Paused = NotPaused
-  | isPausing                              = Paused
-  | otherwise = paused gstate
-      where chars = map extractCharacter (toList (pressedKeys gstate))
-            parsedChars = catMaybes chars
-            isPausing = elem 'p' parsedChars
+togglePause :: IsPaused -> IsPaused
+togglePause NotPaused = Paused
+togglePause Paused    = NotPaused
