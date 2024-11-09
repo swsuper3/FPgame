@@ -50,18 +50,20 @@ collision :: GameState -> GameState
 collision = checkCollisionPlayer . friendlyBulletCollision
 
 checkCollisionPlayer :: GameState -> GameState
-checkCollisionPlayer gstate = gstate {player = newPlayer', enemies = withoutDeadEnemies, bullets = withoutDeadBullets}
+checkCollisionPlayer gstate = gstate {player = newPlayer', enemies = withoutDeadEnemies, bullets = withoutDeadBullets, animations = newAnimations ++ (animations gstate)}
   where (newEnemies, newPlayer) = hostileCollisionCheck (enemies gstate) (player gstate)
         (newBullets, newPlayer') = hostileCollisionCheck hostileBullets newPlayer
         (hostileBullets, friendlyBullets) = partition (\b -> (bulletOwner b) == Hostile) (bullets gstate)
         withoutDeadEnemies = clearDeads newEnemies
         withoutDeadBullets = friendlyBullets ++ clearDeads newBullets
+        newAnimations = map (explodeAnimation . getPos) (filter (`notElem` withoutDeadEnemies) newEnemies)
 
 friendlyBulletCollision :: GameState -> GameState
-friendlyBulletCollision gstate = gstate {enemies = withoutDeadEnemies, bullets = withoutDeadBullets}
+friendlyBulletCollision gstate = gstate {enemies = withoutDeadEnemies, bullets = withoutDeadBullets, animations = newAnimations ++ (animations gstate)}
   where (newBullets, newEnemies) = multiBulletCollision (bullets gstate) (enemies gstate)
         withoutDeadEnemies = clearDeads newEnemies
         withoutDeadBullets = clearDeads newBullets
+        newAnimations = map (explodeAnimation . getPos) (filter (`notElem` withoutDeadEnemies) newEnemies)
 
 multiBulletCollision :: ShotBullets -> AliveEnemies -> (ShotBullets, AliveEnemies)
 multiBulletCollision bulletList enemyList = foldr f ([], enemyList) bulletList
@@ -123,6 +125,9 @@ enemyFiresBullet e p | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = Just $ h
 resetEnemyCooldown :: Enemy -> Enemy
 resetEnemyCooldown e | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = e {enemyCooldown = 0}
                      | otherwise                                      = e
+
+stepAnimations :: [Animation] -> [Animation]
+stepAnimations = map (\(p, i) -> (p, i-1))
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState

@@ -32,12 +32,13 @@ data GameState = GameState {
                    bullets :: ShotBullets,
                    player :: Player,
                    playtime :: Playtime,
-                   generator :: StdGen
+                   generator :: StdGen,
+                   animations :: [Animation]
                  }
 
 initialState :: GameState
 initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = Paused, enemies = [dummyEnemy],
-bullets = [], player = initialPlayer, playtime = 0, generator = mkStdGen 1}
+bullets = [], player = initialPlayer, playtime = 0, generator = mkStdGen 1, animations = []}
 
 initialPlayer :: Player
 initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
@@ -56,7 +57,7 @@ randomHeight gen = randomR (-0.5 * h, 0.5 * h) gen
 
 data Player = Player {playerPosition :: Point, playerDims :: Dimensions, playerLives :: Lives}
 
-data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives, enemyCooldown :: Float}
+data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives, enemyCooldown :: Float} deriving (Show, Eq)
 type AliveEnemies = [Enemy]
 
 data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner, bulletLives :: Lives}
@@ -86,7 +87,7 @@ data SpawnStatus = Upcoming | Spawning | Spawned
 type EnterTime = Int
 --END TECHNICALLY OPTIONAL
 
-data Point  = Point Float Float
+data Point  = Point Float Float deriving (Show, Eq, Ord)
 data Vector = Vector Float Float deriving(Show, Eq, Ord)
 
 type Playtime = Float
@@ -96,6 +97,11 @@ data BoundingBox = BoundingBox {
                   , width     :: Float
                   , height    :: Float 
                   }
+
+type Animation = (Point, Int)
+
+explodeAnimation :: Point -> Animation
+explodeAnimation p = (p, 10)
 
 
 class CanMove a where
