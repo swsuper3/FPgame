@@ -161,6 +161,9 @@ vectorLength (Vector x y) = sqrt $ x*x + y*y
 vectorNormalize :: Vector -> Vector
 vectorNormalize v = (1 / (vectorLength v)) `scalarMult` v
 
+distanceFromOrigin :: Point -> Float
+distanceFromOrigin (Point x y) = vectorLength (Vector x y)
+
 --This function figures out how what direction to move the player in depending on the pressed keys.
 getPlayerMovementVector :: Set Key -> Vector
 getPlayerMovementVector pressedKeys = foldr vectorSum (Vector 0 0) vectors

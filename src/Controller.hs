@@ -80,8 +80,12 @@ hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
                                 | otherwise         = (         e : es,          p')
 
 stepEnemies :: GameState -> Float -> AliveEnemies
-stepEnemies gstate secs = map ((`move` (Vector (-5) 0)) . addTime . resetEnemyCooldown) (enemies gstate)
+stepEnemies gstate secs = filter inBounds $ map ((`move` (Vector (-5) 0)) . addTime . resetEnemyCooldown) (enemies gstate)
   where addTime e = e {enemyCooldown = (enemyCooldown e) + secs}
+
+inBounds :: CanMove a => a -> Bool
+inBounds a = (distanceFromOrigin (getPos a)) <= (0.75 * w)
+  where (w, _) = screenDims
 
 stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
