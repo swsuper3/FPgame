@@ -47,10 +47,9 @@ dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), ene
   where (w, h) = screenDims
 
 
-randomHeight :: GameState -> Float
-randomHeight gstate = output
-  where (output, _) = randomR (-0.5 * h, 0.5 * h) (generator gstate)
-        (_, h) = screenDims
+randomHeight :: StdGen -> (Float, StdGen)
+randomHeight gen = randomR (-0.5 * h, 0.5 * h) gen
+  where (_, h) = screenDims
 
 
 --Now the data types we made ourselves:
