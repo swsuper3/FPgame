@@ -98,8 +98,8 @@ stepStatus gstate = case (status gstate) of (PlayingLevel (Level nr enemyList)) 
                                             otherState                          -> undefined -- stepStatus should not be called if the playingStatus is not of type PlayingLevel
   where updateSpawnStatus (a, b, Spawning) = (a, b, Spawned)  -- If an enemy was spawning last step, it has now spawned
         updateSpawnStatus (a, b, c)
-          | b == (round (playtime gstate)) = (a, b, Spawning)
-          | otherwise                      = (a, b, c)
+          | (b == (round (playtime gstate))) && (c == Upcoming) = (a, b, Spawning)
+          | otherwise                                           = (a, b, c)
 
 stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
