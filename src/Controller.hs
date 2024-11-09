@@ -84,10 +84,16 @@ stepEnemies :: GameState -> Float -> AliveEnemies
 stepEnemies gstate secs = (spawnEnemies (status gstate)) ++ existingEnemies
   where existingEnemies = filter inBounds $ map ((`move` (Vector (-5) 0)) . addTime . resetEnemyCooldown) (enemies gstate)
         addTime e = e {enemyCooldown = (enemyCooldown e) + secs}
-        spawnEnemies (PlayingLevel (Level _ enemyList)) = map getFirst (filter shouldSpawn enemyList)
+        spawnEnemies (PlayingLevel (Level _ enemyList)) = assignPositions (generator gstate) $ map getFirst (filter shouldSpawn enemyList)
         spawnEnemies _                                  = undefined -- stepEnemies should not be called if the playingStatus is not of type PlayingLevel
         shouldSpawn (_, _, c) = c == Spawning
         getFirst  (a, _, _) = a
+
+assignPositions :: StdGen -> AliveEnemies -> AliveEnemies
+assignPositions gen [] = []
+assignPositions gen (e:es) = (setPos e (Point x y)) : assignPositions newGen es
+  where (Point x _) = getPos e
+        (y, newGen) = randomHeight gen
         
 inBounds :: CanMove a => a -> Bool
 inBounds a = (distanceFromOrigin (getPos a)) <= (0.75 * w)
