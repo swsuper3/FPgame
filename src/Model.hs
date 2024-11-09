@@ -62,7 +62,7 @@ type AliveEnemies = [Enemy]
 
 data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner, bulletLives :: Lives}
 type ShotBullets = [Bullet]
-data Owner = Friendly | Hostile
+data Owner = Friendly | Hostile deriving (Show, Eq)
 
 newtype Lives = Lives Int deriving (Show, Eq, Ord)
 newtype Score = Score Int

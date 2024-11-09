@@ -10,6 +10,7 @@ import System.Random
 import Data.Set (insert, delete, empty)
 import Debug.Trace (trace)
 import Data.Maybe (catMaybes)
+import Data.List (partition)
 
 -- -- | Handle one iteration of the game
 -- step :: Float -> GameState -> IO GameState
@@ -48,9 +49,12 @@ collision :: GameState -> GameState
 collision = checkCollisionPlayer . friendlyBulletCollision
 
 checkCollisionPlayer :: GameState -> GameState
-checkCollisionPlayer gstate = gstate {player = newPlayer, enemies = withoutDeadEnemies}
+checkCollisionPlayer gstate = gstate {player = newPlayer', enemies = withoutDeadEnemies, bullets = withoutDeadBullets}
   where (newEnemies, newPlayer) = hostileCollisionCheck (enemies gstate) (player gstate)
+        (newBullets, newPlayer') = hostileCollisionCheck hostileBullets newPlayer
+        (hostileBullets, friendlyBullets) = partition (\b -> (bulletOwner b) == Hostile) (bullets gstate)
         withoutDeadEnemies = clearDeads newEnemies
+        withoutDeadBullets = friendlyBullets ++ clearDeads newBullets
 
 friendlyBulletCollision :: GameState -> GameState
 friendlyBulletCollision gstate = gstate {enemies = withoutDeadEnemies, bullets = withoutDeadBullets}
@@ -67,8 +71,8 @@ multiBulletCollision bulletList enemyList = foldr f ([], enemyList) bulletList
 
 singleBulletCollision :: Bullet -> AliveEnemies -> (Bullet, AliveEnemies)
 singleBulletCollision b = foldr processEnemy (b, [])
-  where processEnemy e (b, es) | e `intersects` b = (hurtSelf b, hurtSelf e : es)
-                               | otherwise        = (         b,          e : es)
+  where processEnemy e (b, es) | e `intersects` b && (bulletOwner b) == Friendly = (hurtSelf b, hurtSelf e : es)
+                               | otherwise                                       = (         b,          e : es)
 
 hostileCollisionCheck :: CanHurtPlayer a => [a] -> Player -> ([a], Player)
 hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
@@ -83,7 +87,7 @@ stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
 
 eNEMYCOOLDOWNTHRESHOLD :: Float
-eNEMYCOOLDOWNTHRESHOLD = 2
+eNEMYCOOLDOWNTHRESHOLD = 4
 
 addedBullets :: AliveEnemies -> Player -> [Bullet]
 addedBullets es p = catMaybes $ map (`enemyFiresBullet` p) es
