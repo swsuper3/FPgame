@@ -38,10 +38,12 @@ step secs gstate
                                         status = stepStatus checkedCollisionGstate,
                                         bullets = newBullets ++ stepBullets checkedCollisionGstate,
                                         playtime = updatePlaytime gstate secs,
-                                        generator = mkStdGen seed
+                                        generator = mkStdGen seed,
+                                        animations = stepAnimations (newAnimations ++ animations gstate)
                                         }
       where checkedCollisionGstate = collision gstate
             newBullets = addedBullets (enemies checkedCollisionGstate) (player checkedCollisionGstate)
+            newAnimations = map (explodeAnimation . getPos) (filter (`notElem` enemies gstate) (enemies checkedCollisionGstate))
 
 stepPlayer :: GameState -> Player
 stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
@@ -50,20 +52,18 @@ collision :: GameState -> GameState
 collision = checkCollisionPlayer . friendlyBulletCollision
 
 checkCollisionPlayer :: GameState -> GameState
-checkCollisionPlayer gstate = gstate {player = newPlayer', enemies = withoutDeadEnemies, bullets = withoutDeadBullets, animations = newAnimations ++ (animations gstate)}
+checkCollisionPlayer gstate = gstate {player = newPlayer', enemies = withoutDeadEnemies, bullets = withoutDeadBullets}
   where (newEnemies, newPlayer) = hostileCollisionCheck (enemies gstate) (player gstate)
         (newBullets, newPlayer') = hostileCollisionCheck hostileBullets newPlayer
         (hostileBullets, friendlyBullets) = partition (\b -> (bulletOwner b) == Hostile) (bullets gstate)
         withoutDeadEnemies = clearDeads newEnemies
         withoutDeadBullets = friendlyBullets ++ clearDeads newBullets
-        newAnimations = map (explodeAnimation . getPos) (filter (`notElem` withoutDeadEnemies) newEnemies)
 
 friendlyBulletCollision :: GameState -> GameState
-friendlyBulletCollision gstate = gstate {enemies = withoutDeadEnemies, bullets = withoutDeadBullets, animations = newAnimations ++ (animations gstate)}
+friendlyBulletCollision gstate = gstate {enemies = withoutDeadEnemies, bullets = withoutDeadBullets}
   where (newBullets, newEnemies) = multiBulletCollision (bullets gstate) (enemies gstate)
         withoutDeadEnemies = clearDeads newEnemies
         withoutDeadBullets = clearDeads newBullets
-        newAnimations = map (explodeAnimation . getPos) (filter (`notElem` withoutDeadEnemies) newEnemies)
 
 multiBulletCollision :: ShotBullets -> AliveEnemies -> (ShotBullets, AliveEnemies)
 multiBulletCollision bulletList enemyList = foldr f ([], enemyList) bulletList
@@ -127,7 +127,7 @@ resetEnemyCooldown e | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = e {enemy
                      | otherwise                                      = e
 
 stepAnimations :: [Animation] -> [Animation]
-stepAnimations = map (\(p, i) -> (p, i-1))
+stepAnimations as = filter (\(_, n) -> n > 0) $ map (\(p, i) -> (p, i-1)) as
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState

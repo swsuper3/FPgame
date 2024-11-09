@@ -98,7 +98,7 @@ data BoundingBox = BoundingBox {
                   , height    :: Float 
                   }
 
-type Animation = (Point, Int)
+type Animation = (Point, Float)
 
 explodeAnimation :: Point -> Animation
 explodeAnimation p = (p, 10)
