@@ -6,6 +6,7 @@ import Data.Set (Set, empty, toList)
 import Graphics.Gloss.Interface.IO.Game (Key (Char))
 import Data.Maybe (catMaybes)
 import Data.Ord (clamp)
+import System.Random (StdGen, Random (randomR))
 
 screenDims :: Dimensions
 screenDims = (400, 400)
@@ -30,12 +31,13 @@ data GameState = GameState {
                    enemies :: AliveEnemies,
                    bullets :: ShotBullets,
                    player :: Player,
-                   playtime :: Playtime
+                   playtime :: Playtime,
+                   generator :: StdGen
                  }
 
-initialState :: GameState
-initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [dummyEnemy],
-bullets = [], player = initialPlayer, playtime = 0}
+initialState :: StdGen -> GameState
+initialState gen = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [dummyEnemy],
+bullets = [], player = initialPlayer, playtime = 0, generator = gen}
 
 initialPlayer :: Player
 initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
@@ -43,6 +45,12 @@ initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playe
 dummyEnemy :: Enemy
 dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives 1}
   where (w, h) = screenDims
+
+
+randomHeight :: GameState -> Float
+randomHeight gstate = output
+  where (output, _) = randomR (-0.5 * h, 0.5 * h) (generator gstate)
+        (_, h) = screenDims
 
 
 --Now the data types we made ourselves:

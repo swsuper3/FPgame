@@ -29,12 +29,14 @@ step secs gstate
     = return $ gstate { elapsedTime = elapsedTime gstate + secs
                       }
   | otherwise
-    = return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
-                                      player = stepPlayer checkedCollisionGstate,
-                                      enemies = stepEnemies checkedCollisionGstate,
-                                      bullets = stepBullets checkedCollisionGstate,
-                                      playtime = updatePlaytime gstate secs
-                                      }
+    = do seed <- randomIO
+         return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
+                                        player = stepPlayer checkedCollisionGstate,
+                                        enemies = stepEnemies checkedCollisionGstate,
+                                        bullets = stepBullets checkedCollisionGstate,
+                                        playtime = updatePlaytime gstate secs,
+                                        generator = mkStdGen seed
+                                        }
       where checkedCollisionGstate = collision gstate
 
 stepPlayer :: GameState -> Player
