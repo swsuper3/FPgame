@@ -253,7 +253,18 @@ togglePause Paused    = NotPaused
 
 -- Loading levels
 loadLevel :: LevelNr -> Level
-loadlevel nr = Level nr (parseFile rawContent) Upcoming
+loadLevel nr = do let filename = "level" : nr : ".txt"
+                  fileLines <- fmap lines (readFile fileName)
+                  let enemyTuples = parseTuples (map words fileLines)
+                  Level nr enemyTuples
+  where parseTuples :: [[String]] -> [(Int, Enemy, SpawnStatus)]
+        parseTuples enemyList = map tuplify enemyList
+        tuplify e = ((read e!!0 :: Int), enemy e!!2, Upcoming) -- explain enemy format
+        enemy livesNr = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0}
+        (w, h) = screenDims
+  
+  
+  Level nr (parseFile rawContent) Upcoming
   where parseFile = undefined
         rawContent = return fmap lines (readFile fileName)
         fileName = "level" : nr : ".txt"
