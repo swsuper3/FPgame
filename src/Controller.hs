@@ -7,7 +7,7 @@ import Model
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
-import Data.Set (insert, delete)
+import Data.Set (insert, delete, empty)
 import Debug.Trace (trace)
 
 -- -- | Handle one iteration of the game
@@ -88,7 +88,7 @@ input e gstate = case paused gstate of
                   Paused    -> return gstate
 
 inputKey :: Event -> GameState -> GameState
-inputKey (EventKey (Char 'p') Down _ _) gstate = gstate {paused = togglePause (paused gstate)}
+inputKey (EventKey (Char 'p') Down _ _) gstate = gstate {paused = togglePause (paused gstate), pressedKeys = empty}
 inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = gstate {bullets = friendlyBullet (player gstate) : bullets gstate}
 inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)}
 inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}
