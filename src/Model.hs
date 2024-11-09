@@ -36,7 +36,7 @@ data GameState = GameState {
                  }
 
 initialState :: StdGen -> GameState
-initialState gen = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [dummyEnemy],
+initialState gen = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = Paused, enemies = [dummyEnemy],
 bullets = [], player = initialPlayer, playtime = 0, generator = gen}
 
 initialPlayer :: Player
@@ -81,7 +81,9 @@ type MovingEnemies = [MovingEnemy]
 
 data Level = Level LevelNr Enemies
 type LevelNr = Int
-type Enemies = [(Enemy, EnterTime)]
+type Enemies = [(Enemy, EnterTime, SpawnStatus)]
+data SpawnStatus = Upcoming | Spawning | Spawned
+  deriving Eq
 type EnterTime = Int
 --END TECHNICALLY OPTIONAL
 
@@ -231,6 +233,12 @@ hostileBullet e p = Bullet {bulletPosition = enemyPosition e, bulletDims = (5, 5
     where direction = vectorNormalize $ Vector (pX-eX) (pY-eY)
           (Point pX pY) = playerPosition p
           (Point eX eY) = enemyPosition e
+
+-- Switching playingStatus
+toggleStatus :: GameState -> PlayingStatus -> GameState
+toggleStatus gstate newStatus = case newStatus of PlayingLevel _ -> gstate {status = newStatus, paused = NotPaused, enemies = [], playtime = 0}
+                                                  _              -> gstate {status = newStatus, paused = Paused}
+
 
 -- Playtime functionality:
 updatePlaytime :: GameState -> Float -> Playtime
