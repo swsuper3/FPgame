@@ -39,11 +39,11 @@ step secs gstate
                                         bullets = newBullets ++ stepBullets checkedCollisionGstate,
                                         playtime = updatePlaytime gstate secs,
                                         generator = mkStdGen seed,
-                                        animations = stepAnimations (newAnimations ++ animations gstate)
+                                        animations = newAnimations ++ stepAnimations (animations gstate)
                                         }
       where checkedCollisionGstate = collision gstate
             newBullets = addedBullets (enemies checkedCollisionGstate) (player checkedCollisionGstate)
-            newAnimations = map (explodeAnimation . getPos) (filter (`notElem` enemies gstate) (enemies checkedCollisionGstate))
+            newAnimations = map (explodeAnimation . getPos) (filter (`notElem` enemies checkedCollisionGstate) (enemies gstate))
 
 stepPlayer :: GameState -> Player
 stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))

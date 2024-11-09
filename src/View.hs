@@ -74,4 +74,4 @@ viewAnimations :: GameState -> Picture
 viewAnimations gstate = pictures $ map viewAnimation (animations gstate)
 
 viewAnimation :: Animation -> Picture
-viewAnimation (Point x y, n) = translate x y $ color orange $ circleSolid (0.5*n)
+viewAnimation (Point x y, n) = translate x y $ color orange $ circleSolid (0.8*n)
