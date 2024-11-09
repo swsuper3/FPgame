@@ -43,7 +43,7 @@ initialPlayer :: Player
 initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
 
 dummyEnemy :: Enemy
-dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives 1}
+dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives 1, enemyCooldown = 0}
   where (w, h) = screenDims
 
 
@@ -57,7 +57,7 @@ randomHeight gstate = output
 
 data Player = Player {playerPosition :: Point, playerDims :: Dimensions, playerLives :: Lives}
 
-data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives}
+data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives, enemyCooldown :: Float}
 type AliveEnemies = [Enemy]
 
 data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner, bulletLives :: Lives}

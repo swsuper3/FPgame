@@ -32,7 +32,7 @@ step secs gstate
     = do seed <- randomIO
          return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
                                         player = stepPlayer checkedCollisionGstate,
-                                        enemies = stepEnemies checkedCollisionGstate,
+                                        enemies = stepEnemies checkedCollisionGstate secs,
                                         bullets = stepBullets checkedCollisionGstate,
                                         playtime = updatePlaytime gstate secs,
                                         generator = mkStdGen seed
@@ -73,8 +73,9 @@ hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
   where processEnemy e (es, p') | e `intersects` p' = (hurtSelf e : es, loseLife p')
                                 | otherwise         = (         e : es,          p')
 
-stepEnemies :: GameState -> AliveEnemies
-stepEnemies gstate = map (`move` (Vector (-5) 0)) (enemies gstate)
+stepEnemies :: GameState -> Float -> AliveEnemies
+stepEnemies gstate secs = map ((`move` (Vector (-5) 0)) . addTime) (enemies gstate)
+  where addTime e = e {enemyCooldown = (enemyCooldown e) + secs}
 
 stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
