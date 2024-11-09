@@ -14,10 +14,18 @@ view = return . viewPure
 --   ShowANumber n -> color green (text (show n))
 --   ShowAChar   c -> color green (text [c])
 
-viewPure :: GameState -> Picture  --To draw something alongside the player, add another view function, and at it to the list in this function.
-viewPure gstate = pictures [viewPlayer gstate, viewLives gstate, viewEnemies gstate, viewBullets gstate, viewTime gstate]
-
-
+viewPure :: GameState -> Picture  --To draw something alongside the player, add another view function, and add it to the list in this function.
+viewPure gstate = case status gstate of
+                    MainMenu    
+                        -> pictures []
+                    LevelMenu
+                        -> pictures []
+                    PlayingLevel _
+                        -> pictures [viewPlayer gstate,
+                                      viewLives gstate,
+                                      viewEnemies gstate,
+                                      viewBullets gstate,
+                                      viewTime gstate]
 
 viewPlayer :: GameState -> Picture
 viewPlayer gstate = translate playerX playerY (color red playerBox)
@@ -49,5 +57,6 @@ viewBullet b = translate bX bY (color blue bulletBox)
         Point bX bY = bulletPosition b
         bulletBox = rectangleSolid w h
 
+-- viewTime is currently unused; it can be displayed to show the current playtime
 viewTime :: GameState -> Picture
-viewTime gstate = color white (text (show (playtime gstate)))
+viewTime gstate = color white (text (show (abs (playtime gstate))))
