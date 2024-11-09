@@ -11,7 +11,7 @@ main :: IO ()
 main = playIO (InWindow "Counter" intScreenDims (0, 0)) -- Or FullScreen
               black            -- Background color
               10               -- Frames per second
-              (initialState (mkStdGen 1))     -- Initial state
+              initialState     -- Initial state
               view             -- View function
               input            -- Event function
               step             -- Step function
