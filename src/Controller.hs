@@ -7,8 +7,10 @@ import Model
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
-import Data.Set (insert, delete)
+import Data.Set (insert, delete, empty)
 import Debug.Trace (trace)
+import Data.Maybe (catMaybes)
+import Data.List (partition)
 
 -- -- | Handle one iteration of the game
 -- step :: Float -> GameState -> IO GameState
@@ -29,13 +31,16 @@ step secs gstate
     = return $ gstate { elapsedTime = elapsedTime gstate + secs
                       }
   | otherwise
-    = return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
-                                      player = stepPlayer checkedCollisionGstate,
-                                      enemies = stepEnemies checkedCollisionGstate,
-                                      bullets = stepBullets checkedCollisionGstate,
-                                      playtime = updatePlaytime gstate secs
-                                      }
+    = do seed <- randomIO
+         return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
+                                        player = stepPlayer checkedCollisionGstate,
+                                        enemies = stepEnemies checkedCollisionGstate secs,
+                                        bullets = newBullets ++ stepBullets checkedCollisionGstate,
+                                        playtime = updatePlaytime gstate secs,
+                                        generator = mkStdGen seed
+                                        }
       where checkedCollisionGstate = collision gstate
+            newBullets = addedBullets (enemies checkedCollisionGstate) (player checkedCollisionGstate)
 
 stepPlayer :: GameState -> Player
 stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
@@ -44,9 +49,12 @@ collision :: GameState -> GameState
 collision = checkCollisionPlayer . friendlyBulletCollision
 
 checkCollisionPlayer :: GameState -> GameState
-checkCollisionPlayer gstate = gstate {player = newPlayer, enemies = withoutDeadEnemies}
+checkCollisionPlayer gstate = gstate {player = newPlayer', enemies = withoutDeadEnemies, bullets = withoutDeadBullets}
   where (newEnemies, newPlayer) = hostileCollisionCheck (enemies gstate) (player gstate)
+        (newBullets, newPlayer') = hostileCollisionCheck hostileBullets newPlayer
+        (hostileBullets, friendlyBullets) = partition (\b -> (bulletOwner b) == Hostile) (bullets gstate)
         withoutDeadEnemies = clearDeads newEnemies
+        withoutDeadBullets = friendlyBullets ++ clearDeads newBullets
 
 friendlyBulletCollision :: GameState -> GameState
 friendlyBulletCollision gstate = gstate {enemies = withoutDeadEnemies, bullets = withoutDeadBullets}
@@ -63,20 +71,38 @@ multiBulletCollision bulletList enemyList = foldr f ([], enemyList) bulletList
 
 singleBulletCollision :: Bullet -> AliveEnemies -> (Bullet, AliveEnemies)
 singleBulletCollision b = foldr processEnemy (b, [])
-  where processEnemy e (b, es) | e `intersects` b = (hurtSelf b, hurtSelf e : es)
-                               | otherwise        = (         b,          e : es)
+  where processEnemy e (b, es) | e `intersects` b && (bulletOwner b) == Friendly = (hurtSelf b, hurtSelf e : es)
+                               | otherwise                                       = (         b,          e : es)
 
 hostileCollisionCheck :: CanHurtPlayer a => [a] -> Player -> ([a], Player)
 hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
   where processEnemy e (es, p') | e `intersects` p' = (hurtSelf e : es, loseLife p')
                                 | otherwise         = (         e : es,          p')
 
-stepEnemies :: GameState -> AliveEnemies
-stepEnemies gstate = map (`move` (Vector (-5) 0)) (enemies gstate)
+stepEnemies :: GameState -> Float -> AliveEnemies
+stepEnemies gstate secs = filter inBounds $ map ((`move` (Vector (-5) 0)) . addTime . resetEnemyCooldown) (enemies gstate)
+  where addTime e = e {enemyCooldown = (enemyCooldown e) + secs}
+
+inBounds :: CanMove a => a -> Bool
+inBounds a = (distanceFromOrigin (getPos a)) <= (0.75 * w)
+  where (w, _) = screenDims
 
 stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
 
+eNEMYCOOLDOWNTHRESHOLD :: Float
+eNEMYCOOLDOWNTHRESHOLD = 4
+
+addedBullets :: AliveEnemies -> Player -> [Bullet]
+addedBullets es p = catMaybes $ map (`enemyFiresBullet` p) es
+
+enemyFiresBullet :: Enemy -> Player -> Maybe Bullet
+enemyFiresBullet e p | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = Just $ hostileBullet e p
+                     | otherwise                                      = Nothing
+
+resetEnemyCooldown :: Enemy -> Enemy
+resetEnemyCooldown e | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = e {enemyCooldown = 0}
+                     | otherwise                                      = e
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
@@ -86,7 +112,7 @@ input e gstate = case paused gstate of
                   Paused    -> return gstate
 
 inputKey :: Event -> GameState -> GameState
-inputKey (EventKey (Char 'p') Down _ _) gstate = gstate {paused = togglePause (paused gstate)}
+inputKey (EventKey (Char 'p') Down _ _) gstate = gstate {paused = togglePause (paused gstate), pressedKeys = empty}
 inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = gstate {bullets = friendlyBullet (player gstate) : bullets gstate}
 inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)}
 inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}

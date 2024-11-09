@@ -6,6 +6,7 @@ import Data.Set (Set, empty, toList)
 import Graphics.Gloss.Interface.IO.Game (Key (Char))
 import Data.Maybe (catMaybes)
 import Data.Ord (clamp)
+import System.Random (StdGen, Random (randomR))
 
 screenDims :: Dimensions
 screenDims = (400, 400)
@@ -30,31 +31,38 @@ data GameState = GameState {
                    enemies :: AliveEnemies,
                    bullets :: ShotBullets,
                    player :: Player,
-                   playtime :: Playtime
+                   playtime :: Playtime,
+                   generator :: StdGen
                  }
 
-initialState :: GameState
-initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [dummyEnemy],
-bullets = [], player = initialPlayer, playtime = 0}
+initialState :: StdGen -> GameState
+initialState gen = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [dummyEnemy],
+bullets = [], player = initialPlayer, playtime = 0, generator = gen}
 
 initialPlayer :: Player
 initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
 
 dummyEnemy :: Enemy
-dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives 1}
+dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives 1, enemyCooldown = 0}
   where (w, h) = screenDims
+
+
+randomHeight :: GameState -> Float
+randomHeight gstate = output
+  where (output, _) = randomR (-0.5 * h, 0.5 * h) (generator gstate)
+        (_, h) = screenDims
 
 
 --Now the data types we made ourselves:
 
 data Player = Player {playerPosition :: Point, playerDims :: Dimensions, playerLives :: Lives}
 
-data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives}
+data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives, enemyCooldown :: Float}
 type AliveEnemies = [Enemy]
 
 data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner, bulletLives :: Lives}
 type ShotBullets = [Bullet]
-data Owner = Friendly | Hostile
+data Owner = Friendly | Hostile deriving (Show, Eq)
 
 newtype Lives = Lives Int deriving (Show, Eq, Ord)
 newtype Score = Score Int
@@ -147,6 +155,15 @@ a `scalarMult` (Vector x y) = Vector (a*x) (a*y)
 vectorSum :: Vector -> Vector -> Vector
 vectorSum (Vector a b) (Vector c d) = Vector (a + c) (b + d)
 
+vectorLength :: Vector -> Float
+vectorLength (Vector x y) = sqrt $ x*x + y*y
+
+vectorNormalize :: Vector -> Vector
+vectorNormalize v = (1 / (vectorLength v)) `scalarMult` v
+
+distanceFromOrigin :: Point -> Float
+distanceFromOrigin (Point x y) = vectorLength (Vector x y)
+
 --This function figures out how what direction to move the player in depending on the pressed keys.
 getPlayerMovementVector :: Set Key -> Vector
 getPlayerMovementVector pressedKeys = foldr vectorSum (Vector 0 0) vectors
@@ -209,6 +226,11 @@ friendlyBullet p = Bullet {bulletPosition = Point (playerX + (0.5 * playerWidth)
   where Point playerX playerY = playerPosition p
         (playerWidth, _) = playerDims p
 
+hostileBullet :: Enemy -> Player -> Bullet
+hostileBullet e p = Bullet {bulletPosition = enemyPosition e, bulletDims = (5, 5), bulletDirection = direction, bulletOwner = Hostile, bulletLives = Lives 1}
+    where direction = vectorNormalize $ Vector (pX-eX) (pY-eY)
+          (Point pX pY) = playerPosition p
+          (Point eX eY) = enemyPosition e
 
 -- Playtime functionality:
 updatePlaytime :: GameState -> Float -> Playtime
