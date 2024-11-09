@@ -213,7 +213,7 @@ friendlyBullet p = Bullet {bulletPosition = Point (playerX + (0.5 * playerWidth)
 -- Switching playingStatus
 toggleStatus :: GameState -> PlayingStatus -> GameState
 toggleStatus gstate newStatus = case newStatus of PlayingLevel _ -> gstate {status = newStatus, paused = NotPaused, enemies = [], playtime = 0}
-                                                  _                                    -> gstate {status = newStatus, paused = Paused}
+                                                  _              -> gstate {status = newStatus, paused = Paused}
 
 
 -- Playtime functionality:

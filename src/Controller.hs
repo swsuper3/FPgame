@@ -69,7 +69,9 @@ hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
                                 | otherwise         = (         e : es,          p')
 
 stepEnemies :: GameState -> AliveEnemies
-stepEnemies gstate = map (`move` (Vector (-5) 0)) (enemies gstate)
+stepEnemies gstate = (spawnEnemies (status gstate)) ++ existingEnemies
+  where existingEnemies = map (`move` (Vector (-5) 0)) (enemies gstate)
+        spawnEnemies (PlayingLevel (Level _ _)) = []
 
 stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
@@ -88,7 +90,7 @@ input e gstate = case paused gstate of
 
 inputKey :: Event -> GameState -> GameState
 inputKey (EventKey (Char 'p') Down _ _) gstate = case status gstate of PlayingLevel _ -> gstate {paused = togglePause (paused gstate)}   -- P; (Un)pausing, only if in a level
-inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = case status gstate of MainMenu -> toggleStatus gstate (PlayingLevel (Level 1 []))                                             -- Space; Moving from main menu to level menu
+inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = case status gstate of MainMenu -> toggleStatus gstate (PlayingLevel (Level 1 [(dummyEnemy, 2), (dummyEnemy, 5)]))                                             -- Space; Moving from main menu to level menu
                                                                                   LevelMenu -> toggleStatus gstate (PlayingLevel (Level 1 []))                                    -- Space; Moving from level menu to level
                                                                                   PlayingLevel _ -> gstate {bullets = friendlyBullet (player gstate) : bullets gstate} -- Space; Shooting bullets in a level
 inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)} -- When any other key is pressed;  for handling holding keys down (pressedKeys)
