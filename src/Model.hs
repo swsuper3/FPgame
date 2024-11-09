@@ -249,3 +249,11 @@ updatePlaytime gstate secs
 togglePause :: IsPaused -> IsPaused
 togglePause NotPaused = Paused
 togglePause Paused    = NotPaused
+
+
+-- Loading levels
+loadLevel :: LevelNr -> Level
+loadlevel nr = Level nr (parseFile rawContent) Upcoming
+  where parseFile = undefined
+        rawContent = return fmap lines (readFile fileName)
+        fileName = "level" : nr : ".txt"
