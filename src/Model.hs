@@ -73,7 +73,8 @@ type MovingEnemies = [MovingEnemy]
 
 data Level = Level LevelNr Enemies
 type LevelNr = Int
-type Enemies = [(Enemy, EnterTime)]
+type Enemies = [(Enemy, EnterTime, Spawned)]
+type Spawned = Bool
 type EnterTime = Int
 --END TECHNICALLY OPTIONAL
 
