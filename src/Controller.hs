@@ -71,14 +71,11 @@ hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
 stepEnemies :: GameState -> AliveEnemies
 stepEnemies gstate = (spawnEnemies (status gstate)) ++ existingEnemies
   where existingEnemies = map (`move` (Vector (-5) 0)) (enemies gstate)
-        spawnEnemies (PlayingLevel (Level _ _)) = []
+        spawnEnemies (PlayingLevel (Level _ enemyList)) = map fst (filter (\x -> (snd x) == (round (playtime gstate))) enemyList)
+        spawnEnemies _                                  = []
 
 stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
-
-
--- | Handle playing states
-
 
 
 -- | Handle user input
