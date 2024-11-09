@@ -35,7 +35,7 @@ step secs gstate
          return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
                                         player = stepPlayer checkedCollisionGstate,
                                         enemies = stepEnemies checkedCollisionGstate secs,
-                                        status = stepStatus checkedCollisionGstate secs,
+                                        status = stepStatus checkedCollisionGstate,
                                         bullets = newBullets ++ stepBullets checkedCollisionGstate,
                                         playtime = updatePlaytime gstate secs,
                                         generator = mkStdGen seed
