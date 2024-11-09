@@ -17,7 +17,7 @@ view = return . viewPure
 viewPure :: GameState -> Picture  --To draw something alongside the player, add another view function, and add it to the list in this function.
 viewPure gstate = case status gstate of
                     MainMenu    
-                        -> pictures []
+                        -> pictures [viewMainMenu]
                     LevelMenu
                         -> pictures []
                     PlayingLevel _
@@ -26,6 +26,11 @@ viewPure gstate = case status gstate of
                                       viewEnemies gstate,
                                       viewBullets gstate,
                                       viewTime gstate]
+
+viewMainMenu :: Picture
+viewMainMenu = translate (-0.4 *screenX) (0.2 * screenY) (scale 0.2 0.2 title)
+  where title = color white (text (show "Press [Space] to start!"));
+        (screenX, screenY) = screenDims
 
 viewPlayer :: GameState -> Picture
 viewPlayer gstate = translate playerX playerY (color red playerBox)
@@ -59,4 +64,6 @@ viewBullet b = translate bX bY (color blue bulletBox)
 
 -- viewTime is currently unused; it can be displayed to show the current playtime
 viewTime :: GameState -> Picture
-viewTime gstate = color white (text (show (abs (playtime gstate))))
+viewTime gstate = translate (0.4 * screenX) (0.4 * screenY) (scale 0.2 0.2 time)
+    where time = color white (text (show (round (playtime gstate))))
+          (screenX, screenY) = screenDims

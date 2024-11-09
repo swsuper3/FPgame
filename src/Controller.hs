@@ -24,18 +24,15 @@ import Debug.Trace (trace)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step secs gstate
-  | (paused gstate) == Paused
-    = return $ gstate { elapsedTime = elapsedTime gstate + secs
-                      }
-  | otherwise
-    = return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
+step secs gstate = case paused gstate of
+                    Paused    -> return $ gstate { elapsedTime = elapsedTime gstate + secs }
+                    NotPaused -> return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
                                       player = stepPlayer checkedCollisionGstate,
                                       enemies = stepEnemies checkedCollisionGstate,
                                       bullets = stepBullets checkedCollisionGstate,
                                       playtime = updatePlaytime gstate secs
                                       }
-      where checkedCollisionGstate = collision gstate
+                                    where checkedCollisionGstate = collision gstate
 
 stepPlayer :: GameState -> Player
 stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
@@ -78,6 +75,10 @@ stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
 
 
+-- | Handle playing states
+
+
+
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
 input e@(EventKey (Char 'p') Down _ _) gstate = return (inputKey e gstate)
@@ -86,10 +87,12 @@ input e gstate = case paused gstate of
                   Paused    -> return gstate
 
 inputKey :: Event -> GameState -> GameState
-inputKey (EventKey (Char 'p') Down _ _) gstate = gstate {paused = togglePause (paused gstate)}
-inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = gstate {bullets = friendlyBullet (player gstate) : bullets gstate}
-inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)}
-inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}
+inputKey (EventKey (Char 'p') Down _ _) gstate = case status gstate of PlayingLevel _ -> gstate {paused = togglePause (paused gstate)}   -- P; (Un)pausing, only if in a level
+inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = case status gstate of MainMenu -> toggleStatus gstate (PlayingLevel (Level 1 []))                                             -- Space; Moving from main menu to level menu
+                                                                                  LevelMenu -> toggleStatus gstate (PlayingLevel (Level 1 []))                                    -- Space; Moving from level menu to level
+                                                                                  PlayingLevel _ -> gstate {bullets = friendlyBullet (player gstate) : bullets gstate} -- Space; Shooting bullets in a level
+inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)} -- When any other key is pressed;  for handling holding keys down (pressedKeys)
+inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}   -- When any other key is released; for handling holding keys down (pressedKeys)
 inputKey _ gstate = gstate
     
 --     -- If the user presses a character key, show that one
