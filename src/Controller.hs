@@ -28,8 +28,8 @@ step secs gstate = case paused gstate of
                     Paused    -> return $ gstate { elapsedTime = elapsedTime gstate + secs }
                     NotPaused -> return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
                                       player = stepPlayer checkedCollisionGstate,
-                                      enemies = stepEnemies checkedCollisionGstate,
                                       status = stepStatus checkedCollisionGstate,
+                                      enemies = stepEnemies checkedCollisionGstate,
                                       bullets = stepBullets checkedCollisionGstate,
                                       playtime = updatePlaytime gstate secs
                                       }
@@ -73,23 +73,17 @@ stepEnemies :: GameState -> AliveEnemies
 stepEnemies gstate = (spawnEnemies (status gstate)) ++ existingEnemies
   where existingEnemies = map (`move` (Vector (-5) 0)) (enemies gstate)
         spawnEnemies (PlayingLevel (Level _ enemyList)) = map getFirst (filter shouldSpawn enemyList)
-        spawnEnemies _                                  = []
-        shouldSpawn (_, b, c) = (b == (round (playtime gstate))) && c
+        spawnEnemies _                                  = undefined -- stepEnemies should not be called if the playingStatus is not of type PlayingLevel
+        shouldSpawn (_, _, c) = c == Spawning
         getFirst  (a, _, _) = a
 
 stepStatus :: GameState -> PlayingStatus
-stepStatus gstate = case (status gstate) of (PlayingLevel (Level nr enemyList)) -> PlayingLevel (Level nr (updateList enemyList))
-                                            otherState                          -> otherState
-  where updateList enemyList = map turnTrue (filter (\x -> (getSecond x) == (round (playtime gstate))) enemyList)
-        getSecond (_, a, _) = a
-        turnTrue  (a, b, _) = (a, b, True)
-  
-  {-
-  updateStatus (status gstate)
-  where updateStatus (PlayingLevel (Level nr enemyList)) = PlayingLevel (Level nr (updateList enemyList))
-        updateStatus stat = stat
-        updateList enemyList = 
-          -}
+stepStatus gstate = case (status gstate) of (PlayingLevel (Level nr enemyList)) -> PlayingLevel (Level nr (map updateSpawnStatus enemyList))
+                                            otherState                          -> undefined -- stepStatus should not be called if the playingStatus is not of type PlayingLevel
+  where updateSpawnStatus (a, b, Spawning) = (a, b, Spawned)  -- If an enemy was spawning last step, it has now spawned
+        updateSpawnStatus (a, b, c)
+          | b == (round (playtime gstate)) = (a, b, Spawning)
+          | otherwise                      = (a, b, c)
 
 stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
@@ -98,13 +92,14 @@ stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bul
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
 input e@(EventKey (Char 'p') Down _ _) gstate = return (inputKey e gstate)
+input e@(EventKey (SpecialKey KeySpace) Down _ _) gstate = return (inputKey e gstate)
 input e gstate = case paused gstate of
                   NotPaused -> return (inputKey e gstate)
                   Paused    -> return gstate
 
 inputKey :: Event -> GameState -> GameState
 inputKey (EventKey (Char 'p') Down _ _) gstate = case status gstate of PlayingLevel _ -> gstate {paused = togglePause (paused gstate)}   -- P; (Un)pausing, only if in a level
-inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = case status gstate of MainMenu -> toggleStatus gstate (PlayingLevel (Level 1 [(dummyEnemy, 2, False), (dummyEnemy, 5, False)]))                                             -- Space; Moving from main menu to level menu
+inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = case status gstate of MainMenu -> toggleStatus gstate (PlayingLevel (Level 1 [(dummyEnemy, 2, Upcoming), (dummyEnemy, 5, Upcoming)]))                                             -- Space; Moving from main menu to level menu
                                                                                   LevelMenu -> toggleStatus gstate (PlayingLevel (Level 1 []))                                    -- Space; Moving from level menu to level
                                                                                   PlayingLevel _ -> gstate {bullets = friendlyBullet (player gstate) : bullets gstate} -- Space; Shooting bullets in a level
 inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)} -- When any other key is pressed;  for handling holding keys down (pressedKeys)

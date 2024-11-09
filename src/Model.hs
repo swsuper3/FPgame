@@ -34,7 +34,7 @@ data GameState = GameState {
                  }
 
 initialState :: GameState
-initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = NotPaused, enemies = [dummyEnemy],
+initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = Paused, enemies = [dummyEnemy],
 bullets = [], player = initialPlayer, playtime = 0}
 
 initialPlayer :: Player
@@ -73,8 +73,9 @@ type MovingEnemies = [MovingEnemy]
 
 data Level = Level LevelNr Enemies
 type LevelNr = Int
-type Enemies = [(Enemy, EnterTime, Spawned)]
-type Spawned = Bool
+type Enemies = [(Enemy, EnterTime, SpawnStatus)]
+data SpawnStatus = Upcoming | Spawning | Spawned
+  deriving Eq
 type EnterTime = Int
 --END TECHNICALLY OPTIONAL
 
