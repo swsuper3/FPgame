@@ -155,6 +155,12 @@ a `scalarMult` (Vector x y) = Vector (a*x) (a*y)
 vectorSum :: Vector -> Vector -> Vector
 vectorSum (Vector a b) (Vector c d) = Vector (a + c) (b + d)
 
+vectorLength :: Vector -> Float
+vectorLength (Vector x y) = sqrt $ x*x + y*y
+
+vectorNormalize :: Vector -> Vector
+vectorNormalize v = (1 / (vectorLength v)) `scalarMult` v
+
 --This function figures out how what direction to move the player in depending on the pressed keys.
 getPlayerMovementVector :: Set Key -> Vector
 getPlayerMovementVector pressedKeys = foldr vectorSum (Vector 0 0) vectors
@@ -217,6 +223,11 @@ friendlyBullet p = Bullet {bulletPosition = Point (playerX + (0.5 * playerWidth)
   where Point playerX playerY = playerPosition p
         (playerWidth, _) = playerDims p
 
+hostileBullet :: Enemy -> Player -> Bullet
+hostileBullet e p = Bullet {bulletPosition = enemyPosition e, bulletDims = (5, 5), bulletDirection = direction, bulletOwner = Hostile, bulletLives = Lives 1}
+    where direction = vectorNormalize $ Vector (pX-eX) (pY-eY)
+          (Point pX pY) = playerPosition p
+          (Point eX eY) = enemyPosition e
 
 -- Playtime functionality:
 updatePlaytime :: GameState -> Float -> Playtime

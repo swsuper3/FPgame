@@ -9,6 +9,7 @@ import Graphics.Gloss.Interface.IO.Game
 import System.Random
 import Data.Set (insert, delete, empty)
 import Debug.Trace (trace)
+import Data.Maybe (catMaybes)
 
 -- -- | Handle one iteration of the game
 -- step :: Float -> GameState -> IO GameState
@@ -33,11 +34,12 @@ step secs gstate
          return $ checkedCollisionGstate { elapsedTime = elapsedTime checkedCollisionGstate + secs,
                                         player = stepPlayer checkedCollisionGstate,
                                         enemies = stepEnemies checkedCollisionGstate secs,
-                                        bullets = stepBullets checkedCollisionGstate,
+                                        bullets = newBullets ++ stepBullets checkedCollisionGstate,
                                         playtime = updatePlaytime gstate secs,
                                         generator = mkStdGen seed
                                         }
       where checkedCollisionGstate = collision gstate
+            newBullets = addedBullets (enemies checkedCollisionGstate) (player checkedCollisionGstate)
 
 stepPlayer :: GameState -> Player
 stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
@@ -74,12 +76,25 @@ hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
                                 | otherwise         = (         e : es,          p')
 
 stepEnemies :: GameState -> Float -> AliveEnemies
-stepEnemies gstate secs = map ((`move` (Vector (-5) 0)) . addTime) (enemies gstate)
+stepEnemies gstate secs = map ((`move` (Vector (-5) 0)) . addTime . resetEnemyCooldown) (enemies gstate)
   where addTime e = e {enemyCooldown = (enemyCooldown e) + secs}
 
 stepBullets :: GameState -> ShotBullets
 stepBullets gstate = map (\b -> move b (10 `scalarMult` bulletDirection b)) (bullets gstate)
 
+eNEMYCOOLDOWNTHRESHOLD :: Float
+eNEMYCOOLDOWNTHRESHOLD = 2
+
+addedBullets :: AliveEnemies -> Player -> [Bullet]
+addedBullets es p = catMaybes $ map (`enemyFiresBullet` p) es
+
+enemyFiresBullet :: Enemy -> Player -> Maybe Bullet
+enemyFiresBullet e p | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = Just $ hostileBullet e p
+                     | otherwise                                      = Nothing
+
+resetEnemyCooldown :: Enemy -> Enemy
+resetEnemyCooldown e | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = e {enemyCooldown = 0}
+                     | otherwise                                      = e
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
