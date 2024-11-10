@@ -55,10 +55,14 @@ viewEnemies :: GameState -> Picture
 viewEnemies gstate = pictures $ map viewEnemy (enemies gstate)
 
 viewEnemy :: Enemy -> Picture
-viewEnemy e = translate eX eY (color (livesColor (enemyLives e)) enemyBox)
+viewEnemy e@(Enemy{enemyType = Dummy}) = translate eX eY (color (livesColor (enemyLives e)) enemyBox)
   where (w, h) = enemyDims e
         Point eX eY = getPos e
         enemyBox = rectangleSolid w h
+viewEnemy e                            = translate eX eY (color (livesColor (enemyLives e)) enemyCircle)
+  where (_, h) = enemyDims e
+        Point eX eY = getPos e
+        enemyCircle = circleSolid (0.6*h)
 
 livesColor :: Lives -> Color
 livesColor (Lives 1) = green
