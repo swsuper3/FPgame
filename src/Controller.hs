@@ -185,7 +185,7 @@ inputKey _ gstate = gstate
 -- | Loading levels
 -- A level file contains lines that specify which enemy should spawn at which time, in format: spawnTime enemyType nrOfLives
 loadLevel :: String -> LevelNr -> GameState -> GameState
-loadLevel fileContent nr gstate = gstate { status = PlayingLevel (Level nr (parseTuples (((map words) . lines) fileContent))), paused = NotPaused, enemies = [], playtime = 0}
+loadLevel fileContent nr gstate = gstate { status = PlayingLevel (Level nr (parseTuples (((map words) . lines) fileContent))), paused = NotPaused, enemies = [], bullets = [], player = initialPlayer, playtime = 0, gameEnd = False, generator = mkStdGen 1, animations = []}
   where parseTuples :: [[String]] -> [(Enemy, Int, SpawnStatus)]
         parseTuples enemyList = map tuplify enemyList
         tuplify e = (enemy (e!!2), (read (e!!0) :: Int), Upcoming) -- explain enemy format
