@@ -64,7 +64,8 @@ viewBullets :: GameState -> Picture
 viewBullets gstate = pictures $ map viewBullet (bullets gstate)
 
 viewBullet :: Bullet -> Picture
-viewBullet b = translate bX bY (color blue bulletBox)
+viewBullet b | (bulletOwner b) == Friendly = translate bX bY (color blue bulletBox)
+             | otherwise                   = translate bX bY (color magenta bulletBox)
   where (w, h) = bulletDims b
         Point bX bY = bulletPosition b
         bulletBox = rectangleSolid w h
