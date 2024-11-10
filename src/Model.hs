@@ -11,6 +11,12 @@ import System.Random (StdGen, Random (randomR), mkStdGen)
 screenDims :: Dimensions
 screenDims = (400, 400)
 
+screenX :: Float
+screenX = fst screenDims
+
+screenY :: Float
+screenY = snd screenDims
+
 intScreenDims :: (Int, Int)
 intScreenDims = (round a, round b)
   where (a, b) = screenDims
@@ -51,9 +57,7 @@ dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), ene
 
 
 randomHeight :: StdGen -> (Float, StdGen)
-randomHeight gen = randomR (-0.5 * h, 0.5 * h) gen
-  where (_, h) = screenDims
-
+randomHeight = randomR (-0.5 * screenY, 0.5 * screenY)
 
 --Now the data types we made ourselves:
 
@@ -78,14 +82,7 @@ type GameEnd = Bool
 
 type Progress = [LevelNr]
 
---TECHNICALLY OPTIONAL
-
 data EnemyType     = Dummy | Moving deriving (Show, Eq)
-
-data Wall          = Wall Point BoundingBox
-type MovingEnemy   = Enemy
-type Walls         = [Wall]
-type MovingEnemies = [MovingEnemy]
 
 data Level = Level LevelNr Enemies
 type LevelNr = Int
@@ -93,7 +90,6 @@ type Enemies = [(Enemy, EnterTime, SpawnStatus)]
 data SpawnStatus = Upcoming | Spawning | Spawned
   deriving Eq
 type EnterTime = Int
---END TECHNICALLY OPTIONAL
 
 data Point  = Point Float Float deriving (Show, Eq, Ord)
 data Vector = Vector Float Float deriving(Show, Eq, Ord)
@@ -108,9 +104,11 @@ data BoundingBox = BoundingBox {
 
 type Animation = (Point, Float)
 
+--The exploding animation sets the amount of 'frames' to ten.
 explodeAnimation :: Point -> Animation
 explodeAnimation p = (p, 10)
 
+--Type-classes:
 
 class CanMove a where
   getPos :: a -> Point
@@ -144,7 +142,7 @@ class HasCollision a => CanHurtPlayer a where
 instance CanMove Player where
   getPos (Player p _ _) = p
   setPos (Player _ pDims l) q = Player newPos pDims l
-    where newPos = Point (clamp (-xBound, xBound) x) (clamp (-yBound, yBound) y)
+    where newPos = Point (clamp (-xBound, xBound) x) (clamp (-yBound, yBound) y) --These clamps make sure the player can't leave the screen
           (Point x y) = q 
           (screenX, screenY) = screenDims
           (playerWidth, playerHeight) = pDims
@@ -164,6 +162,8 @@ moveDirection 's' = Vector 0 (-1)
 moveDirection 'd' = Vector 1 0
 moveDirection _ = Vector 0 0
 
+--Below we have some simple vector operations
+
 scalarMult :: Float -> Vector -> Vector
 a `scalarMult` (Vector x y) = Vector (a*x) (a*y)
 
@@ -174,7 +174,7 @@ vectorLength :: Vector -> Float
 vectorLength (Vector x y) = sqrt $ x*x + y*y
 
 vectorNormalize :: Vector -> Vector
-vectorNormalize v = (1 / (vectorLength v)) `scalarMult` v
+vectorNormalize v = (1 / vectorLength v) `scalarMult` v
 
 distanceFromOrigin :: Point -> Float
 distanceFromOrigin (Point x y) = vectorLength (Vector x y)
@@ -191,7 +191,7 @@ extractCharacter (Char c) = Just c
 extractCharacter _ = Nothing
 
 playerDead :: Player -> Bool
-playerDead p = (playerLives p) <= (Lives 0)
+playerDead p = playerLives p <= Lives 0
 
 loseLife :: Player -> Player
 loseLife p = p {playerLives = Lives(n - 1)}
@@ -214,7 +214,7 @@ instance CanHurtPlayer Enemy where
     where newLives = Lives (oldLives - 1)
           (Lives oldLives) = enemyLives e
   clearDeads [] = []
-  clearDeads (x:xs) = case (enemyLives x) of
+  clearDeads (x:xs) = case enemyLives x of
                     Lives 0 -> clearDeads xs
                     _ -> x : clearDeads xs
 
@@ -235,15 +235,17 @@ instance CanHurtPlayer Bullet where
     where newLives = Lives (oldLives - 1)
           Lives oldLives = bulletLives b
   clearDeads [] = []
-  clearDeads (x:xs) = case (bulletLives x) of
+  clearDeads (x:xs) = case bulletLives x of
                       Lives 0 -> clearDeads xs
                       _ -> x : clearDeads xs
 
+--A bullet shot by the player; by default it moves to the right
 friendlyBullet :: Player -> Bullet
 friendlyBullet p = Bullet {bulletPosition = Point (playerX + (0.5 * playerWidth)) playerY, bulletDims = (5, 5), bulletDirection = Vector 1 0, bulletOwner = Friendly, bulletLives = Lives 1}
   where Point playerX playerY = playerPosition p
         (playerWidth, _) = playerDims p
 
+--A bullet shot by an enemy; by default it moves to the player's position. (Which is why it takes the player as an argument.)
 hostileBullet :: Enemy -> Player -> Bullet
 hostileBullet e p = Bullet {bulletPosition = enemyPosition e, bulletDims = (5, 5), bulletDirection = direction, bulletOwner = Hostile, bulletLives = Lives 1}
     where direction = vectorNormalize $ Vector (pX-eX) (pY-eY)
