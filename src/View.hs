@@ -55,10 +55,15 @@ viewEnemies :: GameState -> Picture
 viewEnemies gstate = pictures $ map viewEnemy (enemies gstate)
 
 viewEnemy :: Enemy -> Picture
-viewEnemy e = translate eX eY (color green enemyBox)
+viewEnemy e = translate eX eY (color (livesColor (enemyLives e)) enemyBox)
   where (w, h) = enemyDims e
         Point eX eY = getPos e
         enemyBox = rectangleSolid w h
+
+livesColor :: Lives -> Color
+livesColor (Lives 3) = red
+livesColor (Lives 2) = yellow
+livesColor _         = green
 
 viewBullets :: GameState -> Picture
 viewBullets gstate = pictures $ map viewBullet (bullets gstate)
