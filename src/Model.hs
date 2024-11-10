@@ -239,12 +239,6 @@ hostileBullet e p = Bullet {bulletPosition = enemyPosition e, bulletDims = (5, 5
           (Point pX pY) = playerPosition p
           (Point eX eY) = enemyPosition e
 
--- Switching playingStatus
-toggleStatus :: GameState -> PlayingStatus -> GameState
-toggleStatus gstate newStatus = case newStatus of PlayingLevel _ -> gstate {status = newStatus, paused = NotPaused, enemies = [], playtime = 0}
-                                                  _              -> gstate {status = newStatus, paused = Paused}
-
-
 -- Playtime functionality:
 updatePlaytime :: GameState -> Float -> Playtime
 updatePlaytime gstate secs
@@ -254,3 +248,20 @@ updatePlaytime gstate secs
 togglePause :: IsPaused -> IsPaused
 togglePause NotPaused = Paused
 togglePause Paused    = NotPaused
+
+{-
+-- Loading levels
+-- A level file contains lines that specify which enemy should spawn at which time, in format: spawnTime enemyType nrOfLives
+loadLevel :: LevelNr -> Level
+loadLevel nr = do let fileName = ("level" ++ (show nr)) ++ ".txt"
+                  fileContent <- readFile fileName
+                  let fileLines = lines fileContent
+                  let enemyTuples = parseTuples (words fileLines)
+                  Level nr enemyTuples
+
+  where parseTuples :: [[String]] -> [(Int, Enemy, SpawnStatus)]
+        parseTuples enemyList = map tuplify enemyList
+        tuplify e = ((read e!!0 :: Int), enemy (e!!2), Upcoming) -- explain enemy format
+        enemy livesNr = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0}
+        (w, h) = screenDims
+        -}
