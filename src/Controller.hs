@@ -40,7 +40,8 @@ step secs gstate
                         gameEnd = False
                       }
   | (gameEnd gstate) && ((playtime gstate) > 3) -- If the game is won and it has been more than 3 seconds, go back to LevelMenu and update progress
-    = return gstate { elapsedTime = elapsedTime gstate + secs,
+    = do appendFile "Levels/progress.txt" ('\n' : (show currentLevelNr))
+         return gstate { elapsedTime = elapsedTime gstate + secs,
                         progress = currentLevelNr : (progress gstate),
                         paused = Paused,
                         status = LevelMenu,
