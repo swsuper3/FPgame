@@ -28,6 +28,23 @@ import Data.Char
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
 step secs gstate
+  | (gameEnd gstate) && ((playtime gstate) > 5) -- If the game just finished, set the playtime to 0
+    = return $ gstate { elapsedTime = elapsedTime gstate + secs,
+                        playtime = 0,
+                        paused = Paused
+                      }
+  | (gameEnd gstate) && ((playtime gstate) > 3) -- If the game is finished and it has been more than 3 seconds, go back to LevelMenu
+    = return $ gstate { elapsedTime = elapsedTime gstate + secs,
+                        paused = Paused,
+                        status = LevelMenu,
+                        gameEnd = False
+                      }
+  | (gameEnd gstate)                            -- If the game is finished
+    = return $ gstate { elapsedTime = elapsedTime gstate + secs,
+                        playtime = playtime gstate + secs,
+                        paused = Paused,
+                        animations = newAnimations ++ stepAnimations (animations gstate)
+                      }
   | (paused gstate) == Paused
     = return $ gstate { elapsedTime = elapsedTime gstate + secs
                       }
@@ -133,7 +150,7 @@ stepGameEnd gstate = (playerDead (player gstate)) || enemiesGone (status gstate)
   where enemiesGone (PlayingLevel (Level _ enemyList)) = ((finalEnemySpawn enemyList) + traversalTime) <= (round (playtime gstate))
         finalEnemySpawn enemyList = maximum (map second enemyList)
         second (_, b, _) = b
-        traversalTime = 9 -- How much time it takes for an enemy to move past the player until it despawns
+        traversalTime = 10 -- How much time it takes for an enemy to move past the player until it despawns
 
 stepPlaytime :: GameState -> Float -> Playtime
 stepPlaytime gstate secs
