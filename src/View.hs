@@ -61,9 +61,9 @@ viewEnemy e = translate eX eY (color (livesColor (enemyLives e)) enemyBox)
         enemyBox = rectangleSolid w h
 
 livesColor :: Lives -> Color
-livesColor (Lives 3) = red
+livesColor (Lives 1) = green
 livesColor (Lives 2) = yellow
-livesColor _         = green
+livesColor _         = red
 
 viewBullets :: GameState -> Picture
 viewBullets gstate = pictures $ map viewBullet (bullets gstate)
