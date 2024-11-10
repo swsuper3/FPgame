@@ -33,8 +33,16 @@ step secs gstate
                         playtime = 0,
                         paused = Paused
                       }
-  | (gameEnd gstate) && ((playtime gstate) > 3) -- If the game is finished and it has been more than 3 seconds, go back to LevelMenu
-    = return $ gstate { elapsedTime = elapsedTime gstate + secs,
+  | (gameEnd gstate) && (playerDead (player gstate)) && ((playtime gstate) > 3) -- If the game is lost and it has been more than 3 seconds, go back to LevelMenu
+    = return gstate { elapsedTime = elapsedTime gstate + secs,
+                        paused = Paused,
+                        status = LevelMenu,
+                        gameEnd = False
+                      }
+  | (gameEnd gstate) && ((playtime gstate) > 3) -- If the game is won and it has been more than 3 seconds, go back to LevelMenu and update progress
+    = do appendFile "Levels/progress.txt" ('\n' : (show currentLevelNr))
+         return gstate { elapsedTime = elapsedTime gstate + secs,
+                        progress = currentLevelNr : (progress gstate),
                         paused = Paused,
                         status = LevelMenu,
                         gameEnd = False
@@ -63,6 +71,7 @@ step secs gstate
       where checkedCollisionGstate = collision gstate
             newBullets = addedBullets (enemies checkedCollisionGstate) (player checkedCollisionGstate)
             newAnimations = map (explodeAnimation . getPos) (filter (`notElem` enemies checkedCollisionGstate) (enemies gstate))
+            (PlayingLevel (Level currentLevelNr _)) = status gstate
 
 stepPlayer :: GameState -> Player
 stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
@@ -112,7 +121,7 @@ stepEnemies gstate secs = (spawnEnemies (status gstate)) ++ existingEnemies
 
 moveEnemy :: Enemy -> Enemy
 moveEnemy e@(Enemy {enemyType = Dummy}) = e `move` (Vector (-5) 0)
-moveEnemy e                             = move e $ 5 `scalarMult` (vectorNormalize $ Vector (-1) (-3 * cos x))
+moveEnemy e                             = move e $ 15 `scalarMult` (vectorNormalize $ Vector (-1) (-3 * cos x))
     where Point x _ = enemyPosition e
 
 assignPositions :: StdGen -> AliveEnemies -> AliveEnemies
@@ -197,4 +206,9 @@ loadLevel fileContent nr gstate = gstate { status = PlayingLevel (Level nr (pars
         enemy livesNr "m" = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0, enemyType = Moving}
         enemy livesNr _ = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0, enemyType = Dummy}
         (w, h) = screenDims
+
+-- | Loading progress
+loadProgress :: String -> Progress
+loadProgress fileContent = map parseProgress (lines fileContent)
+  where parseProgress levelInfo = read levelInfo :: Int
    

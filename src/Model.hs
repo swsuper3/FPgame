@@ -33,13 +33,14 @@ data GameState = GameState {
                    player :: Player,
                    playtime :: Playtime,
                    gameEnd :: GameEnd,
+                   progress :: Progress,
                    generator :: StdGen,
                    animations :: [Animation]
                  }
 
 initialState :: GameState
 initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = Paused, enemies = [dummyEnemy],
-bullets = [], player = initialPlayer, playtime = 0, gameEnd = False, generator = mkStdGen 1, animations = []}
+bullets = [], player = initialPlayer, playtime = 0, gameEnd = False, progress = [], generator = mkStdGen 1, animations = []}
 
 initialPlayer :: Player
 initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
@@ -74,6 +75,8 @@ data IsPaused = NotPaused | Paused
 
 data PlayingStatus = MainMenu | LevelMenu | PlayingLevel Level
 type GameEnd = Bool
+
+type Progress = [LevelNr]
 
 --TECHNICALLY OPTIONAL
 
@@ -249,6 +252,9 @@ hostileBullet e p = Bullet {bulletPosition = enemyPosition e, bulletDims = (5, 5
 
 
 -- Other
+
+levelList :: [LevelNr]
+levelList = [1,2,3]
 
 togglePause :: IsPaused -> IsPaused
 togglePause NotPaused = Paused

@@ -19,7 +19,7 @@ viewPure gstate = case status gstate of
                     MainMenu    
                         -> pictures [viewMainMenu]
                     LevelMenu
-                        -> pictures [viewLevelMenu]
+                        -> pictures (viewLevelMenu : (viewLevels gstate))
                     PlayingLevel _
                         -> pictures [viewPlayer gstate,
                                       viewLives gstate,
@@ -35,8 +35,15 @@ viewMainMenu = translate (-0.4 *screenX) (0.2 * screenY) (scale 0.2 0.2 title)
         (screenX, screenY) = screenDims
 
 viewLevelMenu :: Picture
-viewLevelMenu = translate (-0.5 *screenX) (0.2 * screenY) (scale 0.2 0.2 title)
-  where title = color white (text "Press a number 1-3 to load that level!");
+viewLevelMenu = translate (-0.4 *screenX) (0.2 * screenY) (scale 0.14 0.14 title)
+  where title = color white (text "Press a number to load that level!");
+        (screenX, screenY) = screenDims
+
+viewLevels :: GameState -> [Picture]
+viewLevels gstate = map viewLevel levelList
+  where viewLevel lvl = translate ((-0.4 + (0.1*(fromIntegral lvl))) * screenX) (0.1 * screenY) (scale 0.15 0.15 (displayText lvl)) --translate ((-0.5 + 0.1*(fromIntegral lvl)) * screenX) (screenY) (scale 0.15 0.15 (displayText lvl))
+        displayText lvl | elem lvl (progress gstate) = color green (text (show lvl))
+                        | otherwise                  = color white (text (show lvl))
         (screenX, screenY) = screenDims
 
 viewPlayer :: GameState -> Picture
@@ -94,7 +101,7 @@ viewAnimation (Point x y, n) = translate x y $ color orange $ circleSolid (0.8*n
 
 
 viewPaused :: GameState -> Picture
-viewPaused (GameState {paused = Paused}) = pictures [icon 0, icon 20]
+viewPaused (GameState {paused = Paused, gameEnd = False}) = pictures [icon 0, icon 20]
     where (w, h) = screenDims
           icon x = translate (-0.45*w + x) (0.4*h) $ color white $ rectangleSolid 10 40
 viewPaused _                             = blank
