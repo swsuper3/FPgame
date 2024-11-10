@@ -85,12 +85,17 @@ hostileCollisionCheck enemyList p = foldr processEnemy ([], p) enemyList
 
 stepEnemies :: GameState -> Float -> AliveEnemies
 stepEnemies gstate secs = (spawnEnemies (status gstate)) ++ existingEnemies
-  where existingEnemies = filter inBounds $ map ((`move` (Vector (-5) 0)) . addTime . resetEnemyCooldown) (enemies gstate)
+  where existingEnemies = filter inBounds $ map (moveEnemy . addTime . resetEnemyCooldown) (enemies gstate)
         addTime e = e {enemyCooldown = (enemyCooldown e) + secs}
         spawnEnemies (PlayingLevel (Level _ enemyList)) = assignPositions (generator gstate) $ map getFirst (filter shouldSpawn enemyList)
         spawnEnemies _                                  = undefined -- stepEnemies should not be called if the playingStatus is not of type PlayingLevel
         shouldSpawn (_, _, c) = c == Spawning
         getFirst  (a, _, _) = a
+
+moveEnemy :: Enemy -> Enemy
+moveEnemy e@(Enemy {enemyType = Dummy}) = e `move` (Vector (-5) 0)
+moveEnemy e                             = move e $ 5 `scalarMult` (vectorNormalize $ Vector (-1) (-3 * cos x))
+    where Point x _ = enemyPosition e
 
 assignPositions :: StdGen -> AliveEnemies -> AliveEnemies
 assignPositions gen [] = []
@@ -159,8 +164,9 @@ loadLevel fileContent nr gstate = gstate { status = PlayingLevel (Level nr (pars
 
   where parseTuples :: [[String]] -> [(Enemy, Int, SpawnStatus)]
         parseTuples enemyList = map tuplify enemyList
-        tuplify e = (enemy (e!!2), (read (e!!0) :: Int), Upcoming) -- explain enemy format
-        enemy livesNr = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0}
+        tuplify e = (enemy (e!!2) (e!!1), (read (e!!0) :: Int), Upcoming) -- explain enemy format
+        enemy livesNr "m" = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0, enemyType = Moving}
+        enemy livesNr _ = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0, enemyType = Dummy}
         (w, h) = screenDims
     
 --     -- If the user presses a character key, show that one
