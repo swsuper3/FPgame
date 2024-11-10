@@ -250,21 +250,19 @@ togglePause :: IsPaused -> IsPaused
 togglePause NotPaused = Paused
 togglePause Paused    = NotPaused
 
-
+{-
 -- Loading levels
+-- A level file contains lines that specify which enemy should spawn at which time, in format: spawnTime enemyType nrOfLives
 loadLevel :: LevelNr -> Level
-loadLevel nr = do let filename = "level" : nr : ".txt"
-                  fileLines <- fmap lines (readFile fileName)
-                  let enemyTuples = parseTuples (map words fileLines)
+loadLevel nr = do let fileName = ("level" ++ (show nr)) ++ ".txt"
+                  fileContent <- readFile fileName
+                  let fileLines = lines fileContent
+                  let enemyTuples = parseTuples (words fileLines)
                   Level nr enemyTuples
+
   where parseTuples :: [[String]] -> [(Int, Enemy, SpawnStatus)]
         parseTuples enemyList = map tuplify enemyList
-        tuplify e = ((read e!!0 :: Int), enemy e!!2, Upcoming) -- explain enemy format
+        tuplify e = ((read e!!0 :: Int), enemy (e!!2), Upcoming) -- explain enemy format
         enemy livesNr = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0}
         (w, h) = screenDims
-  
-  
-  Level nr (parseFile rawContent) Upcoming
-  where parseFile = undefined
-        rawContent = return fmap lines (readFile fileName)
-        fileName = "level" : nr : ".txt"
+        -}

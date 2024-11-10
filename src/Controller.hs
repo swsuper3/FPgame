@@ -11,6 +11,7 @@ import Data.Set (insert, delete, empty)
 import Debug.Trace (trace)
 import Data.Maybe (catMaybes)
 import Data.List (partition)
+import Data.Char
 
 -- -- | Handle one iteration of the game
 -- step :: Float -> GameState -> IO GameState
@@ -122,6 +123,12 @@ resetEnemyCooldown e | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = e {enemy
 input :: Event -> GameState -> IO GameState
 input e@(EventKey (Char 'p') Down _ _) gstate = return (inputKey e gstate)
 input e@(EventKey (SpecialKey KeySpace) Down _ _) gstate = return (inputKey e gstate)
+input e@(EventKey (Char c) Down _ _) gstate | isDigit c = do let fileName = ("Levels/level" ++ [c]) ++ ".txt"
+                                                             fileContent <- readFile fileName
+                                                             return (loadLevel fileContent gstate)
+                                            | otherwise = case paused gstate of
+                                                           NotPaused -> return (inputKey e gstate)
+                                                           Paused    -> return gstate
 input e gstate = case paused gstate of
                   NotPaused -> return (inputKey e gstate)
                   Paused    -> return gstate
@@ -134,6 +141,17 @@ inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = case status gstate o
 inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)} -- When any other key is pressed;  for handling holding keys down (pressedKeys)
 inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}   -- When any other key is released; for handling holding keys down (pressedKeys)
 inputKey _ gstate = gstate
+
+-- | Loading levels
+-- A level file contains lines that specify which enemy should spawn at which time, in format: spawnTime enemyType nrOfLives
+loadLevel :: String -> GameState -> GameState
+loadLevel fileContent gstate = gstate { status = PlayingLevel (Level 1 (parseTuples (((map words) . lines) fileContent))), paused = NotPaused, enemies = [], playtime = 0}
+
+  where parseTuples :: [[String]] -> [(Enemy, Int, SpawnStatus)]
+        parseTuples enemyList = map tuplify enemyList
+        tuplify e = (enemy (e!!2), (read (e!!0) :: Int), Upcoming) -- explain enemy format
+        enemy livesNr = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0}
+        (w, h) = screenDims
     
 --     -- If the user presses a character key, show that one
 --     gstate { infoToShow = ShowAChar c }
