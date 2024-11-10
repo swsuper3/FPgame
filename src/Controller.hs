@@ -197,4 +197,10 @@ loadLevel fileContent nr gstate = gstate { status = PlayingLevel (Level nr (pars
         enemy livesNr "m" = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0, enemyType = Moving}
         enemy livesNr _ = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0, enemyType = Dummy}
         (w, h) = screenDims
+
+-- | Loading progress
+loadProgress :: String -> Progress
+loadProgress fileContent = map parseProgress (((map words) . lines) fileContent)
+  where parseProgress levelInfo = ((read (levelInfo!!0) :: Int), completion (levelInfo!!2))
+        completion c = c == "y"
    
