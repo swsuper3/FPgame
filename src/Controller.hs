@@ -145,7 +145,7 @@ input e gstate = case paused gstate of
                   Paused    -> return gstate
 
 inputKey :: Event -> GameState -> GameState
-inputKey (EventKey (Char 'p') Down _ _) gstate = case status gstate of PlayingLevel _ -> gstate {paused = togglePause (paused gstate), pressedKeys = empty}   -- P; (Un)pausing, only if in a level
+inputKey (EventKey (Char 'p') Down _ _) gstate@(GameState {status = PlayingLevel _}) = gstate {paused = togglePause (paused gstate), pressedKeys = empty}   -- P; (Un)pausing, only if in a level
 inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = gstate {bullets = friendlyBullet (player gstate) : bullets gstate} -- Space; Shooting bullets in a level
 inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)} -- When any other key is pressed;  for handling holding keys down (pressedKeys)
 inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}   -- When any other key is released; for handling holding keys down (pressedKeys)
