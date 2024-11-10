@@ -32,13 +32,14 @@ data GameState = GameState {
                    bullets :: ShotBullets,
                    player :: Player,
                    playtime :: Playtime,
+                   gameEnd :: GameEnd,
                    generator :: StdGen,
                    animations :: [Animation]
                  }
 
 initialState :: GameState
 initialState = GameState {pressedKeys = empty, elapsedTime = 0, score = Score 0, status = MainMenu, paused = Paused, enemies = [dummyEnemy],
-bullets = [], player = initialPlayer, playtime = 0, generator = mkStdGen 1, animations = []}
+bullets = [], player = initialPlayer, playtime = 0, gameEnd = False, generator = mkStdGen 1, animations = []}
 
 initialPlayer :: Player
 initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
@@ -72,6 +73,7 @@ data IsPaused = NotPaused | Paused
   deriving Eq
 
 data PlayingStatus = MainMenu | LevelMenu | PlayingLevel Level
+type GameEnd = Bool
 
 --TECHNICALLY OPTIONAL
 data Wall          = Wall Point BoundingBox
@@ -182,6 +184,9 @@ extractCharacter :: Key -> Maybe Char
 extractCharacter (Char c) = Just c
 extractCharacter _ = Nothing
 
+playerDead :: Player -> Bool
+playerDead p = (playerLives p) <= (Lives 0)
+
 loseLife :: Player -> Player
 loseLife p = p {playerLives = Lives(n - 1)}
   where (Lives n) = playerLives p
@@ -239,29 +244,9 @@ hostileBullet e p = Bullet {bulletPosition = enemyPosition e, bulletDims = (5, 5
           (Point pX pY) = playerPosition p
           (Point eX eY) = enemyPosition e
 
--- Playtime functionality:
-updatePlaytime :: GameState -> Float -> Playtime
-updatePlaytime gstate secs
-  | (paused gstate) == Paused   = playtime gstate
-  | otherwise                   = (playtime gstate) + secs
+
+-- Other
 
 togglePause :: IsPaused -> IsPaused
 togglePause NotPaused = Paused
 togglePause Paused    = NotPaused
-
-{-
--- Loading levels
--- A level file contains lines that specify which enemy should spawn at which time, in format: spawnTime enemyType nrOfLives
-loadLevel :: LevelNr -> Level
-loadLevel nr = do let fileName = ("level" ++ (show nr)) ++ ".txt"
-                  fileContent <- readFile fileName
-                  let fileLines = lines fileContent
-                  let enemyTuples = parseTuples (words fileLines)
-                  Level nr enemyTuples
-
-  where parseTuples :: [[String]] -> [(Int, Enemy, SpawnStatus)]
-        parseTuples enemyList = map tuplify enemyList
-        tuplify e = ((read e!!0 :: Int), enemy (e!!2), Upcoming) -- explain enemy format
-        enemy livesNr = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0}
-        (w, h) = screenDims
-        -}

@@ -38,7 +38,8 @@ step secs gstate
                                         enemies = stepEnemies checkedCollisionGstate secs,
                                         status = stepStatus checkedCollisionGstate,
                                         bullets = newBullets ++ stepBullets checkedCollisionGstate,
-                                        playtime = updatePlaytime gstate secs,
+                                        playtime = stepPlaytime gstate secs,
+                                        gameEnd = stepGameEnd gstate,
                                         generator = mkStdGen seed,
                                         animations = newAnimations ++ stepAnimations (animations gstate)
                                         }
@@ -127,6 +128,18 @@ resetEnemyCooldown :: Enemy -> Enemy
 resetEnemyCooldown e | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = e {enemyCooldown = 0}
                      | otherwise                                      = e
 
+stepGameEnd :: GameState -> GameEnd
+stepGameEnd gstate = (playerDead (player gstate)) || enemiesGone (status gstate)
+  where enemiesGone (PlayingLevel (Level _ enemyList)) = ((finalEnemySpawn enemyList) + traversalTime) <= (round (playtime gstate))
+        finalEnemySpawn enemyList = maximum (map second enemyList)
+        second (_, b, _) = b
+        traversalTime = 9 -- How much time it takes for an enemy to move past the player until it despawns
+
+stepPlaytime :: GameState -> Float -> Playtime
+stepPlaytime gstate secs
+  | (paused gstate) == Paused   = playtime gstate
+  | otherwise                   = (playtime gstate) + secs
+
 stepAnimations :: [Animation] -> [Animation]
 stepAnimations as = filter (\(_, n) -> n > 0) $ map (\(p, i) -> (p, i-1)) as
 
@@ -156,13 +169,8 @@ inputKey _ gstate = gstate
 -- A level file contains lines that specify which enemy should spawn at which time, in format: spawnTime enemyType nrOfLives
 loadLevel :: String -> LevelNr -> GameState -> GameState
 loadLevel fileContent nr gstate = gstate { status = PlayingLevel (Level nr (parseTuples (((map words) . lines) fileContent))), paused = NotPaused, enemies = [], playtime = 0}
-
   where parseTuples :: [[String]] -> [(Enemy, Int, SpawnStatus)]
         parseTuples enemyList = map tuplify enemyList
         tuplify e = (enemy (e!!2), (read (e!!0) :: Int), Upcoming) -- explain enemy format
         enemy livesNr = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives (read livesNr :: Int), enemyCooldown = 0}
         (w, h) = screenDims
-    
---     -- If the user presses a character key, show that one
---     gstate { infoToShow = ShowAChar c }
--- inputKey _ gstate = gstate -- Otherwise keep the same
