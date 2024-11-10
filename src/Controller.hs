@@ -33,8 +33,15 @@ step secs gstate
                         playtime = 0,
                         paused = Paused
                       }
-  | (gameEnd gstate) && ((playtime gstate) > 3) -- If the game is finished and it has been more than 3 seconds, go back to LevelMenu
-    = return $ gstate { elapsedTime = elapsedTime gstate + secs,
+  | (gameEnd gstate) && (playerDead (player gstate)) && ((playtime gstate) > 3) -- If the game is lost and it has been more than 3 seconds, go back to LevelMenu
+    = return gstate { elapsedTime = elapsedTime gstate + secs,
+                        paused = Paused,
+                        status = LevelMenu,
+                        gameEnd = False
+                      }
+  | (gameEnd gstate) && ((playtime gstate) > 3) -- If the game is won and it has been more than 3 seconds, go back to LevelMenu and update progress
+    = return gstate { elapsedTime = elapsedTime gstate + secs,
+                        progress = currentLevelNr : (progress gstate),
                         paused = Paused,
                         status = LevelMenu,
                         gameEnd = False
@@ -63,6 +70,7 @@ step secs gstate
       where checkedCollisionGstate = collision gstate
             newBullets = addedBullets (enemies checkedCollisionGstate) (player checkedCollisionGstate)
             newAnimations = map (explodeAnimation . getPos) (filter (`notElem` enemies checkedCollisionGstate) (enemies gstate))
+            (PlayingLevel (Level currentLevelNr _)) = status gstate
 
 stepPlayer :: GameState -> Player
 stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
