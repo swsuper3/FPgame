@@ -200,7 +200,6 @@ loadLevel fileContent nr gstate = gstate { status = PlayingLevel (Level nr (pars
 
 -- | Loading progress
 loadProgress :: String -> Progress
-loadProgress fileContent = map parseProgress (((map words) . lines) fileContent)
-  where parseProgress levelInfo = ((read (levelInfo!!0) :: Int), completion (levelInfo!!2))
-        completion c = c == "y"
+loadProgress fileContent = map parseProgress (lines fileContent)
+  where parseProgress levelInfo = read levelInfo :: Int
    

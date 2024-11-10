@@ -76,8 +76,7 @@ data IsPaused = NotPaused | Paused
 data PlayingStatus = MainMenu | LevelMenu | PlayingLevel Level
 type GameEnd = Bool
 
-type Progress = [(LevelNr, Completed)]
-type Completed = Bool
+type Progress = [LevelNr]
 
 --TECHNICALLY OPTIONAL
 
@@ -253,6 +252,9 @@ hostileBullet e p = Bullet {bulletPosition = enemyPosition e, bulletDims = (5, 5
 
 
 -- Other
+
+levelList :: [LevelNr]
+levelList = [1,2,3]
 
 togglePause :: IsPaused -> IsPaused
 togglePause NotPaused = Paused
