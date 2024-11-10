@@ -45,7 +45,7 @@ initialPlayer :: Player
 initialPlayer = Player {playerPosition = Point 0 0, playerDims = (50, 10), playerLives = Lives 3}
 
 dummyEnemy :: Enemy
-dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives 1, enemyCooldown = 0}
+dummyEnemy = Enemy {enemyPosition = Point (0.6 * w) 0, enemyDims = (10, 10), enemyLives = Lives 1, enemyCooldown = 0, enemyType = Dummy}
   where (w, h) = screenDims
 
 
@@ -58,7 +58,7 @@ randomHeight gen = randomR (-0.5 * h, 0.5 * h) gen
 
 data Player = Player {playerPosition :: Point, playerDims :: Dimensions, playerLives :: Lives}
 
-data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives, enemyCooldown :: Float} deriving (Show, Eq)
+data Enemy = Enemy {enemyPosition :: Point, enemyDims :: Dimensions, enemyLives :: Lives, enemyCooldown :: Float, enemyType :: EnemyType} deriving (Show, Eq)
 type AliveEnemies = [Enemy]
 
 data Bullet = Bullet {bulletPosition :: Point, bulletDims :: Dimensions, bulletDirection :: Vector, bulletOwner :: Owner, bulletLives :: Lives}
@@ -76,6 +76,9 @@ data PlayingStatus = MainMenu | LevelMenu | PlayingLevel Level
 type GameEnd = Bool
 
 --TECHNICALLY OPTIONAL
+
+data EnemyType     = Dummy | Moving deriving (Show, Eq)
+
 data Wall          = Wall Point BoundingBox
 type MovingEnemy   = Enemy
 type Walls         = [Wall]
