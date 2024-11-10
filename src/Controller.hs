@@ -121,7 +121,7 @@ stepEnemies gstate secs = (spawnEnemies (status gstate)) ++ existingEnemies
 
 moveEnemy :: Enemy -> Enemy
 moveEnemy e@(Enemy {enemyType = Dummy}) = e `move` (Vector (-5) 0)
-moveEnemy e                             = move e $ 5 `scalarMult` (vectorNormalize $ Vector (-1) (-3 * cos x))
+moveEnemy e                             = move e $ 15 `scalarMult` (vectorNormalize $ Vector (-1) (-3 * cos x))
     where Point x _ = enemyPosition e
 
 assignPositions :: StdGen -> AliveEnemies -> AliveEnemies
