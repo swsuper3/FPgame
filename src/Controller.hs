@@ -38,10 +38,12 @@ step secs gstate
                                         status = stepStatus checkedCollisionGstate,
                                         bullets = newBullets ++ stepBullets checkedCollisionGstate,
                                         playtime = updatePlaytime gstate secs,
-                                        generator = mkStdGen seed
+                                        generator = mkStdGen seed,
+                                        animations = newAnimations ++ stepAnimations (animations gstate)
                                         }
       where checkedCollisionGstate = collision gstate
             newBullets = addedBullets (enemies checkedCollisionGstate) (player checkedCollisionGstate)
+            newAnimations = map (explodeAnimation . getPos) (filter (`notElem` enemies checkedCollisionGstate) (enemies gstate))
 
 stepPlayer :: GameState -> Player
 stepPlayer gstate = move (player gstate) (10 `scalarMult` (getPlayerMovementVector (pressedKeys gstate)))
@@ -123,6 +125,9 @@ enemyFiresBullet e p | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = Just $ h
 resetEnemyCooldown :: Enemy -> Enemy
 resetEnemyCooldown e | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = e {enemyCooldown = 0}
                      | otherwise                                      = e
+
+stepAnimations :: [Animation] -> [Animation]
+stepAnimations as = filter (\(_, n) -> n > 0) $ map (\(p, i) -> (p, i-1)) as
 
 -- | Handle user input
 input :: Event -> GameState -> IO GameState

@@ -25,7 +25,8 @@ viewPure gstate = case status gstate of
                                       viewLives gstate,
                                       viewEnemies gstate,
                                       viewBullets gstate,
-                                      viewTime gstate]
+                                      viewTime gstate,
+                                      viewAnimations gstate]
 
 viewMainMenu :: Picture
 viewMainMenu = translate (-0.4 *screenX) (0.2 * screenY) (scale 0.2 0.2 title)
@@ -67,3 +68,10 @@ viewTime :: GameState -> Picture
 viewTime gstate = translate (0.4 * screenX) (0.4 * screenY) (scale 0.2 0.2 time)
     where time = color white (text (show (round (playtime gstate))))
           (screenX, screenY) = screenDims
+
+
+viewAnimations :: GameState -> Picture
+viewAnimations gstate = pictures $ map viewAnimation (animations gstate)
+
+viewAnimation :: Animation -> Picture
+viewAnimation (Point x y, n) = translate x y $ color orange $ circleSolid (0.8*n)
