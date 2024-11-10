@@ -101,7 +101,7 @@ viewAnimation (Point x y, n) = translate x y $ color orange $ circleSolid (0.8*n
 
 
 viewPaused :: GameState -> Picture
-viewPaused (GameState {paused = Paused}) = pictures [icon 0, icon 20]
+viewPaused (GameState {paused = Paused, gameEnd = False}) = pictures [icon 0, icon 20]
     where (w, h) = screenDims
           icon x = translate (-0.45*w + x) (0.4*h) $ color white $ rectangleSolid 10 40
 viewPaused _                             = blank
