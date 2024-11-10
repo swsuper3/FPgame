@@ -26,7 +26,8 @@ viewPure gstate = case status gstate of
                                       viewEnemies gstate,
                                       viewBullets gstate,
                                       viewTime gstate,
-                                      viewAnimations gstate]
+                                      viewAnimations gstate,
+                                      viewPaused gstate]
 
 viewMainMenu :: Picture
 viewMainMenu = translate (-0.4 *screenX) (0.2 * screenY) (scale 0.2 0.2 title)
@@ -80,3 +81,10 @@ viewAnimations gstate = pictures $ map viewAnimation (animations gstate)
 
 viewAnimation :: Animation -> Picture
 viewAnimation (Point x y, n) = translate x y $ color orange $ circleSolid (0.8*n)
+
+
+viewPaused :: GameState -> Picture
+viewPaused (GameState {paused = Paused}) = pictures [icon 0, icon 20]
+    where (w, h) = screenDims
+          icon x = translate (-0.45*w + x) (0.4*h) $ color white $ rectangleSolid 10 40
+viewPaused _                             = blank
