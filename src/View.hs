@@ -19,7 +19,7 @@ viewPure gstate = case status gstate of
                     MainMenu    
                         -> pictures [viewMainMenu]
                     LevelMenu
-                        -> pictures []
+                        -> pictures [viewLevelMenu]
                     PlayingLevel _
                         -> pictures [viewPlayer gstate,
                                       viewLives gstate,
@@ -29,7 +29,12 @@ viewPure gstate = case status gstate of
 
 viewMainMenu :: Picture
 viewMainMenu = translate (-0.4 *screenX) (0.2 * screenY) (scale 0.2 0.2 title)
-  where title = color white (text (show "Press [Space] to start!"));
+  where title = color white (text "Press [Space] to start!");
+        (screenX, screenY) = screenDims
+
+viewLevelMenu :: Picture
+viewLevelMenu = translate (-0.5 *screenX) (0.2 * screenY) (scale 0.2 0.2 title)
+  where title = color white (text "Press a number 1-3 to load that level!");
         (screenX, screenY) = screenDims
 
 viewPlayer :: GameState -> Picture

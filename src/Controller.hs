@@ -122,30 +122,29 @@ resetEnemyCooldown e | (enemyCooldown e) >= eNEMYCOOLDOWNTHRESHOLD    = e {enemy
 -- | Handle user input
 input :: Event -> GameState -> IO GameState
 input e@(EventKey (Char 'p') Down _ _) gstate = return (inputKey e gstate)
-input e@(EventKey (SpecialKey KeySpace) Down _ _) gstate = return (inputKey e gstate)
-input e@(EventKey (Char c) Down _ _) gstate | isDigit c = do let fileName = ("Levels/level" ++ [c]) ++ ".txt"
-                                                             fileContent <- readFile fileName
-                                                             return (loadLevel fileContent gstate)
-                                            | otherwise = case paused gstate of
-                                                           NotPaused -> return (inputKey e gstate)
-                                                           Paused    -> return gstate
+input e@(EventKey (SpecialKey KeySpace) Down _ _) gstate@(GameState {status = MainMenu}) = return (gstate {status = LevelMenu})  
+input e@(EventKey (Char c) Down _ _) gstate@(GameState {status = LevelMenu}) | isDigit c && (digitToInt c) <= 3 && (digitToInt c) > 0 = do let fileName = ("Levels/level" ++ [c]) ++ ".txt"
+                                                                                                                                           fileContent <- readFile fileName
+                                                                                                                                           return (loadLevel fileContent (digitToInt c) gstate)
+                                                                             | otherwise = case paused gstate of
+                                                                                            NotPaused -> return (inputKey e gstate)
+                                                                                            Paused    -> return gstate
 input e gstate = case paused gstate of
                   NotPaused -> return (inputKey e gstate)
                   Paused    -> return gstate
 
 inputKey :: Event -> GameState -> GameState
 inputKey (EventKey (Char 'p') Down _ _) gstate = case status gstate of PlayingLevel _ -> gstate {paused = togglePause (paused gstate), pressedKeys = empty}   -- P; (Un)pausing, only if in a level
-inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = case status gstate of MainMenu -> toggleStatus gstate (PlayingLevel (Level 1 [(dummyEnemy, 2, Upcoming), (dummyEnemy, 5, Upcoming)]))                                             -- Space; Moving from main menu to level menu
-                                                                                  LevelMenu -> toggleStatus gstate (PlayingLevel (Level 1 []))                                    -- Space; Moving from level menu to level
-                                                                                  PlayingLevel _ -> gstate {bullets = friendlyBullet (player gstate) : bullets gstate} -- Space; Shooting bullets in a level
+inputKey (EventKey (SpecialKey KeySpace) Down _ _) gstate = gstate {bullets = friendlyBullet (player gstate) : bullets gstate} -- Space; Shooting bullets in a level
 inputKey (EventKey key Down _ _) gstate = gstate {pressedKeys = insert key (pressedKeys gstate)} -- When any other key is pressed;  for handling holding keys down (pressedKeys)
 inputKey (EventKey key Up _ _) gstate = gstate {pressedKeys = delete key (pressedKeys gstate)}   -- When any other key is released; for handling holding keys down (pressedKeys)
 inputKey _ gstate = gstate
 
+
 -- | Loading levels
 -- A level file contains lines that specify which enemy should spawn at which time, in format: spawnTime enemyType nrOfLives
-loadLevel :: String -> GameState -> GameState
-loadLevel fileContent gstate = gstate { status = PlayingLevel (Level 1 (parseTuples (((map words) . lines) fileContent))), paused = NotPaused, enemies = [], playtime = 0}
+loadLevel :: String -> LevelNr -> GameState -> GameState
+loadLevel fileContent nr gstate = gstate { status = PlayingLevel (Level nr (parseTuples (((map words) . lines) fileContent))), paused = NotPaused, enemies = [], playtime = 0}
 
   where parseTuples :: [[String]] -> [(Enemy, Int, SpawnStatus)]
         parseTuples enemyList = map tuplify enemyList

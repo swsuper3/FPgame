@@ -234,12 +234,6 @@ hostileBullet e p = Bullet {bulletPosition = enemyPosition e, bulletDims = (5, 5
           (Point pX pY) = playerPosition p
           (Point eX eY) = enemyPosition e
 
--- Switching playingStatus
-toggleStatus :: GameState -> PlayingStatus -> GameState
-toggleStatus gstate newStatus = case newStatus of PlayingLevel _ -> gstate {status = newStatus, paused = NotPaused, enemies = [], playtime = 0}
-                                                  _              -> gstate {status = newStatus, paused = Paused}
-
-
 -- Playtime functionality:
 updatePlaytime :: GameState -> Float -> Playtime
 updatePlaytime gstate secs
